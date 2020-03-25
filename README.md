@@ -13,8 +13,9 @@ psql
 ALTER USER 'user_name' WITH PASSWORD 'password'
 ```
 
-## update password in db.go
+ 
 
 ```bash
+<!-- update password in db.go -->
 \c soul_api
 ```
