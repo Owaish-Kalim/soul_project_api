@@ -13,11 +13,6 @@ import (
 // }
 
 func Show(w http.ResponseWriter, r *http.Request) {
-	// setupResponse(&w, r)
-	// if (*r).Method == "OPTIONS" {
-	// 	return
-	// }
-
 	if r.Method != "GET" {
 		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
 		return
@@ -29,12 +24,19 @@ func Show(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(500), http.StatusInternalServerError)
 		return
 	}
+
+	userJson, err := json.Marshal(usr)
+	if err != nil {
+		panic(err)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(usr)
+	w.WriteHeader(http.StatusOK)
+	// json.NewEncoder(w).Encode(usr)
+	w.Write(userJson)
 }
 
 func Create(w http.ResponseWriter, r *http.Request) {
-	// setupResponse(&w, r)
 
 	if r.Method != "POST" {
 		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
