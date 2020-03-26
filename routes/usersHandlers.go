@@ -1,9 +1,9 @@
 package routes
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"encoding/json"
 )
 
 // func setupResponse(w *http.ResponseWriter, req *http.Request) {
@@ -20,19 +20,18 @@ func Show(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "GET" {
 		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
-		return 
+		return
 	}
 	fmt.Println("sadasf")
-	
+
 	usr, err := ShowUser()
 	if err != nil {
 		http.Error(w, http.StatusText(500), http.StatusInternalServerError)
-		return 
-	} 
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(usr)
 }
-
 
 func Create(w http.ResponseWriter, r *http.Request) {
 	// setupResponse(&w, r)
@@ -41,16 +40,15 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
 		return
 	}
-	fmt.Println(r.FormValue("name"))
 
-	 http.StatusText(200)
+	http.StatusText(200)
 
-	// usr, err := CreateUser(w, r)
-	// if err != nil {
-	// 	http.Error(w, http.StatusText(500), http.StatusInternalServerError)
-	// 	return
-	// } 
+	usr, err := CreateUser(w, r)
+	if err != nil {
+		http.Error(w, http.StatusText(500), http.StatusInternalServerError)
+		return
+	}
 
-	// w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
-	// json.NewEncoder(w).Encode()
+	w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
+	json.NewEncoder(w).Encode(usr)
 }
