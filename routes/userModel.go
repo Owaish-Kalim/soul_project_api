@@ -3,15 +3,15 @@ package routes
 import (
 	"fmt"
 	"net/http"
-	// "soul_api/config"
+	"soul_api/config"
 	"encoding/json"
 	"time"
 )
 
 type User struct {
-	name     string
-	password string
-	email    string
+	Name     string `json:"name"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
 	CreatedAt time.Time
 }
 
@@ -19,6 +19,8 @@ var err error
 
 func CreateUser(w http.ResponseWriter, r *http.Request) (User, error) {
 
+	w.Header().Set("Content-Type", "application/json")
+	r.ParseForm()
 	user := User{}
 
 	err := json.NewDecoder(r.Body).Decode(&user)
@@ -28,27 +30,48 @@ func CreateUser(w http.ResponseWriter, r *http.Request) (User, error) {
 
 	user.CreatedAt = time.Now().Local()
 
+	if user.Name == "" || user.Password == "" || user.Email == "" {
+		http.Error(w, http.StatusText(400), 400)
+		return user, nil
+	}
 
-	// user.name = r.FormValue("name")
-	// user.email = r.FormValue("email")
-	// user.password = r.FormValue("password")
+	sqlStatement := `
+	INSERT INTO users (name,email,password)
+	VALUES ($1, $2, $3)
+	RETURNING id`
 
-	// if user.name == "" || user.password == "" || user.email == "" {
-	// 	fmt.Println("BLANKFIELDS")
-	// 	http.Error(w, http.StatusText(400), 400)
-	// 	return user, nil
-	// }
-	fmt.Println(r.FormValue("name"))
-	// _, err = config.DB.Exec(`Insert INTO users (name, email, password) VALUES ($1, $2, $3)`, user.name, user.email, user.password)
+	id := 0
+	err = config.DB.QueryRow(sqlStatement, user.Name, user.Email, user.Password).Scan(&id)
+	if err != nil {
+	panic(err)
+	}
 
-	// if err != nil {
-	// 	http.Error(w, http.StatusText(500), 500)
-	// 	return user, nil
-	// }
+	fmt.Println("New record ID is:", id)
+
 	return user, err
+} 
+
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
+	
+
+	sqlStatement := `
+	UPDATE users
+	SET name = $2, email = $3, password = &4
+	WHERE id = $1;`
+
+	_, err = config.DB.Exec(sqlStatement, 1, "name", "email", "password") 
+	if err != nil {
+  	panic(err)
+	}
 }
 
-func ShowUser() (User, error) {
-	var usr User
-	return usr, nil
-}
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	sqlStatement := `
+	DELETE FROM users
+	WHERE id = $1;`
+	_, err = config.DB.Exec(sqlStatement, 1)
+	if err != nil {
+  	panic(err)
+	}
+} 
+
