@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"soul_api/config"
 	"encoding/json"
-	"time"
+	"time" 
 )
 
 type User struct {
@@ -13,13 +13,15 @@ type User struct {
 	Password string `json:"password"`
 	Email    string `json:"email"`
 	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
-var err error
+// var err error
 
 func CreateUser(w http.ResponseWriter, r *http.Request) (User, error) {
 
 	w.Header().Set("Content-Type", "application/json")
+
 	r.ParseForm()
 	user := User{}
 
@@ -28,48 +30,48 @@ func CreateUser(w http.ResponseWriter, r *http.Request) (User, error) {
 		panic(err)
 	}
 
-	user.CreatedAt = time.Now().Local()
+	// if user.Name == "" || user.Password == "" || user.Email == "" {
+	// 	http.Error(w, http.StatusText(400), 400)
+	// 	return user, nil
+	// }
 
-	if user.Name == "" || user.Password == "" || user.Email == "" {
-		http.Error(w, http.StatusText(400), 400)
-		return user, nil
-	}
+	user.CreatedAt = time.Now().Local()
+	user.UpdatedAt = time.Now().Local()
 
 	sqlStatement := `
-	INSERT INTO users (name,email,password)
-	VALUES ($1, $2, $3)
+	INSERT INTO users ("Name","Email","Password", "CreatedAt","UpdatedAt")
+	VALUES ($1, $2, $3, $4, $5)
 	RETURNING id`
 
 	id := 0
-	err = config.DB.QueryRow(sqlStatement, user.Name, user.Email, user.Password).Scan(&id)
+	err = config.Db.QueryRow(sqlStatement, user.Name, user.Email, user.Password, user.CreatedAt, user.UpdatedAt).Scan(&id)
 	if err != nil {
-	panic(err)
+		return user, err
 	}
-
-	fmt.Println("New record ID is:", id)
 
 	return user, err
 } 
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	
-
 	sqlStatement := `
 	UPDATE users
 	SET name = $2, email = $3, password = &4
-	WHERE id = $1;`
+	WHERE Email = $1;`
 
-	_, err = config.DB.Exec(sqlStatement, 1, "name", "email", "password") 
+	_, err := config.Db.Exec(sqlStatement, 1, "name", "email", "password") 
 	if err != nil {
+		fmt.Println("ERROR: ")
+		fmt.Println(err)
   	panic(err)
 	}
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	
 	sqlStatement := `
 	DELETE FROM users
-	WHERE id = $1;`
-	_, err = config.DB.Exec(sqlStatement, 1)
+	WHERE Email = $1;`
+	_, err := config.Db.Exec(sqlStatement, 1)
 	if err != nil {
   	panic(err)
 	}
