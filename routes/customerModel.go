@@ -9,7 +9,6 @@ import (
 )
 
 type Customer struct {
-
 	Customer_Soul_Id string `json:"customersoulid"` 
 	Customer_Name string `json:"name"`
 	Mobile_No string `json:"mobile"`
