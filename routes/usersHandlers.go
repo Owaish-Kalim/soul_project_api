@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"encoding/json"
 	"net/http"
+	"github.com/gorilla/context"
+	"soul_api/middleware"
 )
 
 func Create(w http.ResponseWriter, r *http.Request) {
@@ -55,6 +57,8 @@ func List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
+	userEmail := context.Get(r, middleware.Decoded)
+	fmt.Println(userEmail)
+
 }
 
