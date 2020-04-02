@@ -9,6 +9,8 @@ import (
 	"time" 
 	"golang.org/x/crypto/bcrypt"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/context"
+	"soul_api/middleware"
 )
 
 
@@ -30,7 +32,6 @@ type Claims struct {
 	jwt.StandardClaims	
 }
 
-// var err error
 
 func CreateUser(w http.ResponseWriter, r *http.Request) (User, error) {
 
@@ -63,9 +64,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request) (User, error) {
 } 
 
 
-
-
-
 func LoginUser(w http.ResponseWriter, r *http.Request) (User, error) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -82,38 +80,33 @@ func LoginUser(w http.ResponseWriter, r *http.Request) (User, error) {
 	
 	var user User;
 	row := config.Db.QueryRow(sqlStatement, client.Email)
-	err = row.Scan(&user.Name, &user.Email,
-	&user.Password)
+	err = row.Scan(&user.Name, &user.Email, &user.Password)
 
 	switch err {
 	case sql.ErrNoRows:
-		fmt.Println("BAD CREDENTIALS!")
 		return user, sql.ErrNoRows
 	case nil: 
-		fmt.Println("GHUSGAYA")
-		fmt.Println(client.Password)
-		hsPwd,bErr:= bcrypt.GenerateFromPassword([]byte(client.Password), 8)
-		if bErr != nil {
-			// fmt.Println("kalim") 
-			w.WriteHeader(http.StatusInternalServerError)
-			} 
-		fmt.Println(string(hsPwd))
-		fmt.Println(user.Password)
+		
+		// hsPwd,bErr:= bcrypt.GenerateFromPassword([]byte(client.Password), 8)
+		// fmt.Println(hsPwd)
+		// if bErr != nil {
+		// 	w.WriteHeader(http.StatusInternalServerError)
+		// 	} 
+		
 		eror := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(client.Password))
 		if eror != nil {
 			return user, eror
 		} 
 
-		/// GENERATE TOKEN 
-		expirationTime := time.Now().Add(5 * time.Minute)
+		expirationTime := time.Now().Add(15 * time.Minute)
 		claims := &Claims{
-			Username: user.Name,
+			Username: user.Email,
 			StandardClaims: jwt.StandardClaims{
 			// In JWT, the expiry time is expressed as unix milliseconds
 			ExpiresAt: expirationTime.Unix(),
 			},
 		}
-
+		fmt.Println("Owaish")
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 		tokenString, err := token.SignedString(jwtKey)
 
@@ -122,13 +115,8 @@ func LoginUser(w http.ResponseWriter, r *http.Request) (User, error) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return user, err
 		}
-		// Tokens := []string{}
-		// Tokens = append(Tokens, user.Token..x.)
-		// user.Token = append(Tokens, tokenString)
-		// tokenString.Scan(&user.Token)
+
 		ps := &user
-		fmt.Println("LOLA")
-		fmt.Println(tokenString)
 		ps.Token = tokenString
 		
 		sqlStatement := `UPDATE users SET "Token"=$1 WHERE "Email"=$2`
@@ -138,17 +126,8 @@ func LoginUser(w http.ResponseWriter, r *http.Request) (User, error) {
 			return user, err
 		}
 
-
 		return user, nil
 
-
-		// http.SetCookie(w, &http.Cookie{
-		// 	Name:    "token",
-		// 	Value:   tokenString,
-		// 	Expires: expirationTime,
-		// })
-		
-		// return user, nil
 	default:
 	panic(err)
 	}
@@ -156,31 +135,38 @@ func LoginUser(w http.ResponseWriter, r *http.Request) (User, error) {
 
 
 
-func UpdateUser(w http.ResponseWriter, r *http.Request) { 
+func UpdateUser(w http.ResponseWriter, r *http.Request) (User,error) { 
 
+	w.Header().Set("Content-Type", "application/json")
+	r.ParseForm()
+
+	var user = User{};
 	
-
-	sqlStatement := `
-	UPDATE users
-	SET name = $2, email = $3, password = &4
-	WHERE Email = $1;`
-
-	_, err := config.Db.Exec(sqlStatement, 1, "name", "email", "password") 
+	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		fmt.Println("ERROR: ")
-		fmt.Println(err)
+		panic(err)
+	}
+
+	userEmail := context.Get(r,  middleware.Decoded)
+	
+	sqlStatement := ` UPDATE users SET "Name" = $1, "Email" = $2, "Password" = $3 WHERE ("Email") = $4`
+
+	_, err = config.Db.Exec(sqlStatement, user.Name, user.Email, user.Password, userEmail) 
+	if err != nil {
   	panic(err)
 	}
+	return user,nil
 }
 
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
+// func DeleteUser(w http.ResponseWriter, r *http.Request) (User, error) {
 	
-	sqlStatement := `
-	DELETE FROM users
-	WHERE Email = $1;`
-	_, err := config.Db.Exec(sqlStatement, 1)
-	if err != nil {
-  	panic(err)
-	}
-} 
+// 	// userEmail := context.Get(r,  middleware.Decoded)
+
+// 	// sqlStatement := ` DELETE FROM users WHERE Email = $1;`
+// 	// _, err := config.Db.Exec(sqlStatement, userEmail) 
+// 	// if err != nil {
+//   	// panic(err)
+// 	// }
+// } 
+
 
