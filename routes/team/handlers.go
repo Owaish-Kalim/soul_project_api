@@ -20,10 +20,9 @@ func Create(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(team)
 }
 
-
-func Login(w http.ResponseWriter, r *http.Request) { 
+func Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	if r.Method != "POST" { 
+	if r.Method != "POST" {
 		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
 		return
 	}
@@ -34,7 +33,6 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(team)
 }
-
 
 func Update(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -50,6 +48,33 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(team)
 }
 
+func UpdateStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != "POST" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+	team, err := UpdateTeamStatus(w, r)
+	if err.Message != "" {
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+	json.NewEncoder(w).Encode(team)
+}
+
+func View(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != "GET" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+	team, err := ViewTeam(w, r)
+	if err.Message != "" {
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+	json.NewEncoder(w).Encode(team)
+}
 
 func List(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -64,4 +89,3 @@ func List(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(teams)
 }
-

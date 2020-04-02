@@ -3,7 +3,6 @@ package team
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"soul_api/config"
 	"soul_api/middleware"
@@ -15,9 +14,35 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func CreateTeam(w http.ResponseWriter, r *http.Request) (Team, Shared.ErrorMsg) {
+func BuildResponse(response *Response, team Team) Response {
+	response.TeamId = team.TeamId
+	response.FirstName = team.FirstName
+	response.LastName = team.LastName
+	response.Email = team.Email
+	response.Address = team.Address
+	response.MobileNo = team.MobileNo
+	response.Status = team.Status
+	response.Joining_Date = team.Joining_Date
+	return *response
+}
+
+func BuildLoginResponse(response *LoginResponse, team Team) LoginResponse {
+	response.TeamId = team.TeamId
+	response.FirstName = team.FirstName
+	response.LastName = team.LastName
+	response.Email = team.Email
+	response.Address = team.Address
+	response.MobileNo = team.MobileNo
+	response.Status = team.Status
+	response.Joining_Date = team.Joining_Date
+	response.Token = team.Token
+	return *response
+}
+
+func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorMsg) {
 	r.ParseForm()
 	team := Team{}
+	response := Response{}
 	err := json.NewDecoder(r.Body).Decode(&team)
 	if err != nil {
 		panic(err)
@@ -31,7 +56,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Team, Shared.ErrorMsg) 
 		team.MobileNo == "" ||
 		team.Status == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		return team, Shared.ErrorMsg{Message: "Fields cannot be empty."}
+		return response, Shared.ErrorMsg{Message: "Fields cannot be empty."}
 	}
 
 	team.Joining_Date = time.Now().Local()
@@ -40,7 +65,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Team, Shared.ErrorMsg) 
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return team, Shared.ErrorMsg{Message: "Internal Server Error."}
+		return response, Shared.ErrorMsg{Message: "Internal Server Error."}
 	}
 
 	sqlStatement := `
@@ -51,103 +76,71 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Team, Shared.ErrorMsg) 
 	team.TeamId = 0
 	err = config.Db.QueryRow(sqlStatement, team.FirstName, team.LastName, team.Email, team.Address, team.Joining_Date, team.CreatedAt, string(hashedPassword), team.MobileNo, team.Status).Scan(&team.TeamId)
 	if err != nil {
-		return team, Shared.ErrorMsg{Message: "Internal Server Error."}
+		return response, Shared.ErrorMsg{Message: "Email already registered"}
 	}
-
-	team.Password = ""
-	return team, Shared.ErrorMsg{Message: ""}
+	BuildResponse(&response, team)
+	return response, Shared.ErrorMsg{Message: ""}
 }
 
-func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorMsg) {
-	r.ParseForm()
-	var teams []Response
-	fmt.Println("asfgds")
-	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams WHERE 1=1;`
-	fmt.Println(sqlStatement)
-	rows, err := config.Db.Query(sqlStatement)
-	if err != nil {
-		panic(err)
-	}
-
-	for rows.Next() {
-		var team = Response{}
-		rows.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Joining_Date)
-		teams = append(teams, team)
-	}
-	return teams, Shared.ErrorMsg{Message: ""}
-}
-
-func LoginTeam(w http.ResponseWriter, r *http.Request) (Team, Shared.ErrorMsg) {
-	w.Header().Set("Content-Type", "application/json")
+func LoginTeam(w http.ResponseWriter, r *http.Request) (LoginResponse, Shared.ErrorMsg) {
 	r.ParseForm()
 	var client = Team{}
-
+	var response = LoginResponse{}
 	err := json.NewDecoder(r.Body).Decode(&client)
 	if err != nil {
 		panic(err)
 	}
-	sqlStatement := `SELECT ("FirstName"), ("LastName"), ("Email"), ("Password"), ("Address"), ("MobileNo"), ("Status") FROM slh_teams WHERE ("Email")=$1;`
+	sqlStatement := `SELECT ("TeamId"), ("FirstName"), ("LastName"), ("Email"), ("Password"), ("Address"), ("MobileNo"), ("Status") FROM slh_teams WHERE ("Email")=$1;`
 	team := Team{}
 	row := config.Db.QueryRow(sqlStatement, client.Email)
-	err = row.Scan(&team.FirstName, &team.LastName, &team.Email, &team.Password, &team.Address, &team.MobileNo, &team.Status)
+	err = row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Password, &team.Address, &team.MobileNo, &team.Status)
 
 	switch err {
 	case sql.ErrNoRows:
 		w.WriteHeader(http.StatusNotFound)
-		return team, Shared.ErrorMsg{Message: "Email or Password Incorrect."}
+		return response, Shared.ErrorMsg{Message: "Email or Password Incorrect."}
 	case nil:
 		eror := bcrypt.CompareHashAndPassword([]byte(team.Password), []byte(client.Password))
 		if eror != nil {
 			w.WriteHeader(http.StatusForbidden)
-			return team, Shared.ErrorMsg{Message: "Bad Credentials"}
+			return response, Shared.ErrorMsg{Message: "Bad Credentials"}
 		}
 
 		expirationTime := time.Now().Add(50 * time.Minute)
 		claims := &Shared.Claims{
 			Username: team.Email,
 			StandardClaims: jwt.StandardClaims{
-				// In JWT, the expiry time is expressed as unix milliseconds
 				ExpiresAt: expirationTime.Unix(),
 			},
 		}
-		fmt.Println("Owaish")
+
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 		tokenString, err := token.SignedString(Shared.JwtKey)
-
 		if err != nil {
-			// If there is an error in creating the JWT return an internal server error
 			w.WriteHeader(http.StatusInternalServerError)
-			return team, Shared.ErrorMsg{Message: "Internal Server Error."}
+			return response, Shared.ErrorMsg{Message: "Internal Server Error."}
 		}
-
-		ps := &team
-		ps.Token = tokenString
-
 		sqlStatement := `UPDATE slh_teams SET "Token"=$1 WHERE "Email"=$2`
-
 		_, err = config.Db.Exec(sqlStatement, tokenString, team.Email)
 		if err != nil {
-			return team, Shared.ErrorMsg{Message: "Internal Server Error."}
+			return response, Shared.ErrorMsg{Message: "Internal Server Error."}
 		}
-		team.Password = ""
-		return team, Shared.ErrorMsg{Message: ""}
+		team.Token = tokenString
+		BuildLoginResponse(&response, team)
+		return response, Shared.ErrorMsg{Message: ""}
 	default:
 		panic(err)
 	}
 }
 
 func UpdateTeam(w http.ResponseWriter, r *http.Request) (Team, Shared.ErrorMsg) {
-
 	w.Header().Set("Content-Type", "application/json")
 	r.ParseForm()
-
 	var team = Team{}
-
 	err := json.NewDecoder(r.Body).Decode(&team)
 	if err != nil {
 		panic(err)
 	}
-
 	if team.FirstName == "" || team.LastName == "" || team.Email == "" || team.Password == "" || team.Address == "" || team.MobileNo == "" || team.Status == "" {
 		w.WriteHeader(http.StatusPreconditionFailed)
 		return team, Shared.ErrorMsg{Message: "BLANK FIELDS"}
@@ -163,4 +156,63 @@ func UpdateTeam(w http.ResponseWriter, r *http.Request) (Team, Shared.ErrorMsg) 
 	}
 	team.Password = ""
 	return team, Shared.ErrorMsg{Message: ""}
+}
+
+func UpdateTeamStatus(w http.ResponseWriter, r *http.Request) (StatusResponse, Shared.ErrorMsg) {
+
+	w.Header().Set("Content-Type", "application/json")
+	r.ParseForm()
+
+	var member = StatusResponse{}
+
+	err := json.NewDecoder(r.Body).Decode(&member)
+	if err != nil {
+		panic(err)
+	}
+
+	if member.Email == "" || member.Status == "" {
+		w.WriteHeader(http.StatusPreconditionFailed)
+		return member, Shared.ErrorMsg{Message: "BLANK FIELDS"}
+	}
+
+	userEmail := context.Get(r, middleware.Decoded)
+	sqlStatement := ` UPDATE slh_teams SET "Status" = $1 WHERE ("Email") = $2`
+	_, err = config.Db.Exec(sqlStatement, member.Status, userEmail)
+	if err != nil {
+		return member, Shared.ErrorMsg{Message: "Internal Server Error."}
+	}
+	return member, Shared.ErrorMsg{Message: ""}
+}
+
+func ViewTeam(w http.ResponseWriter, r *http.Request) (Team, Shared.ErrorMsg) {
+	r.ParseForm()
+	var team Team
+	userEmail := context.Get(r, middleware.Decoded)
+	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams WHERE ("Email")=$1;`
+	row, err := config.Db.Query(sqlStatement, userEmail)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return team, Shared.ErrorMsg{Message: "Internal Server Error."}
+	}
+	row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Joining_Date)
+
+	return team, Shared.ErrorMsg{Message: ""}
+}
+
+func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorMsg) {
+	r.ParseForm()
+	var teams []Response
+	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams WHERE 1=1;`
+	rows, err := config.Db.Query(sqlStatement)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return teams, Shared.ErrorMsg{Message: "Internal Server Error."}
+	}
+
+	for rows.Next() {
+		var team = Response{}
+		rows.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Joining_Date)
+		teams = append(teams, team)
+	}
+	return teams, Shared.ErrorMsg{Message: ""}
 }
