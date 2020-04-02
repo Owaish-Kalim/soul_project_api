@@ -6,7 +6,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var DB *sql.DB
+var Db *sql.DB
+var err error
 
 const (
 	host     = "localhost"
@@ -16,21 +17,20 @@ const (
 	dbname   = "soul_api"
 )
 
-func init() {
-	// var err error
+func init() {	
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
-	DB, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		panic(err)
-	}
-	defer DB.Close()
 
-	err = DB.Ping()
+	Db, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
 	}
-	
+
+	err = Db.Ping()
+	if err != nil {
+		panic(err)
+	}
+
 	fmt.Println("You are connected to your database !")
 }
