@@ -1,4 +1,4 @@
-package routes
+package users
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/context"
 	"soul_api/middleware"
 	"soul_api/config"
+	// "soul_api/routes"
 )
 
 func Create(w http.ResponseWriter, r *http.Request) {

@@ -1,4 +1,4 @@
-package routes
+package users
 
 import (
 	"fmt"
@@ -11,27 +11,8 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/context"
 	"soul_api/middleware"
+	"soul_api/routes"
 )
-
-
-
-type User struct {
-	id 	int
-	Name     string `json:"name"`
-	Password string `json:"password"`
-	Email    string `json:"email"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Token 	string `json:"token"`
-}
-
-var jwtKey = []byte("my_secret_key")
-
-type Claims struct {
-	Username string `json:"username"`
-	jwt.StandardClaims	
-}
-
 
 func CreateUser(w http.ResponseWriter, r *http.Request) (User, error) {
 
@@ -99,7 +80,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) (User, error) {
 		} 
 
 		expirationTime := time.Now().Add(15 * time.Minute)
-		claims := &Claims{
+		claims := &Shared.Claims{
 			Username: user.Email,
 			StandardClaims: jwt.StandardClaims{
 			// In JWT, the expiry time is expressed as unix milliseconds
@@ -108,7 +89,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) (User, error) {
 		}
 		fmt.Println("Owaish")
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		tokenString, err := token.SignedString(jwtKey)
+		tokenString, err := token.SignedString(Shared.JwtKey)
 
 		if err != nil {
 			// If there is an error in creating the JWT return an internal server error
