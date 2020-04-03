@@ -27,7 +27,9 @@ func main() {
 	r.HandleFunc("/team/list", middleware.ValidateTokenMiddleware(team.List)).Methods("GET")
 	r.HandleFunc("/team/add-member", team.Create).Methods("POST")
 	r.HandleFunc("/team/update-member", middleware.ValidateTokenMiddleware(team.Update)).Methods("PUT")
-	r.HandleFunc("/team/view-member", middleware.ValidateTokenMiddleware(team.List)).Methods("GET")
+	r.HandleFunc("/team/update-team-member", middleware.ValidateTokenMiddleware(team.UpdateMember)).Methods("POST")
+	r.HandleFunc("/team/view-member", middleware.ValidateTokenMiddleware(team.View)).Methods("GET")
+	// r.HandleFunc(`/team/edit-team-member/{:id}`, middleware.ValidateTokenMiddleware(team.View)).Methods("POST")
 	r.HandleFunc("/team/update-status", middleware.ValidateTokenMiddleware(team.UpdateStatus)).Methods("POST")
 	r.HandleFunc("/api/customers", customers.CrtCustomers).Methods("POST")
 
