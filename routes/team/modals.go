@@ -2,7 +2,6 @@ package team
 
 import (
 	"time"
-	// "github.com/dgrijalva/jwt-go"
 )
 
 type Team struct {
@@ -15,6 +14,7 @@ type Team struct {
 	Token        string `json:"token"`
 	MobileNo     string `json:"mobileno"`
 	Status       string `json:"status"`
+	Role         string `json:"role"`
 	Joining_Date time.Time
 	CreatedAt    time.Time
 }
@@ -25,6 +25,18 @@ type Response struct {
 	LastName     string `json:"lastname"`
 	Email        string `json:"email"`
 	Address      string `json:"address"`
+	Role         string `json:"role"`
+	MobileNo     string `json:"mobileno"`
+	Status       string `json:"status"`
+	Joining_Date time.Time
+}
+
+type UpdateResponse struct {
+	FirstName    string `json:"firstname"`
+	LastName     string `json:"lastname"`
+	Email        string `json:"email"`
+	Address      string `json:"address"`
+	Role         string `json:"role"`
 	MobileNo     string `json:"mobileno"`
 	Status       string `json:"status"`
 	Joining_Date time.Time
@@ -36,6 +48,7 @@ type LoginResponse struct {
 	LastName     string `json:"lastname"`
 	Email        string `json:"email"`
 	Address      string `json:"address"`
+	Role         string `json:"role"`
 	MobileNo     string `json:"mobileno"`
 	Status       string `json:"status"`
 	Token        string `json:"token"`
