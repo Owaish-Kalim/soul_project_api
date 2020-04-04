@@ -310,7 +310,7 @@ func ViewTeamMember(w http.ResponseWriter, r *http.Request) (Response, Shared.Er
 func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorMsg) {
 	r.ParseForm()
 	p := pagination.ParseQuery(r.URL.RequestURI())
-	Limit:=  p.Limit
+	Limit:=  p.Limit 
 	Page:=   p.Page
 	fmt.Println(Limit)
 	fmt.Println(Page)
