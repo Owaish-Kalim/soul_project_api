@@ -30,20 +30,25 @@ func ValidateTokenMiddleware(next http.HandlerFunc) http.HandlerFunc {
 					}
 					return []byte("my_secret_key"), nil
 				})
+				fmt.Println("asf")
 				if error != nil {
 					json.NewEncoder(w).Encode(ErrorMsg{Message: error.Error()})
 					return
 				}
+				fmt.Println("HEHR")
 				if token.Valid {
 					var email string ;
 					fmt.Println("asdas") ; 
 					sqlStatement := `SELECT ("Email") FROM slh_teams WHERE ("Token")=$1;`
 					fmt.Println(1) ;
 					row := config.Db.QueryRow(sqlStatement, bearerToken[1])
+					fmt.Println("HEasfkhaHR")
 					err := row.Scan(&email) 
+					
 					if err != nil {
 					log.Fatal(err)	 
 					} 
+					fmt.Println("HEasfkhaHR")
 					mapstructure.Decode(token.Claims, &email)
 					context.Set(req,Decoded,email) 
 					next(w, req)

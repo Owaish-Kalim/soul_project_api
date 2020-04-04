@@ -5,14 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	// "strconv"
+	"time"
+
 	"soul_api/config"
 	"soul_api/middleware"
-	Shared "soul_api/routes"
-	"time"
+	"soul_api/routes"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/context"
 	"golang.org/x/crypto/bcrypt"
+	 "github.com/gemcook/pagination-go"
 )
 
 func BuildResponse(response *Response, team Team) Response {
@@ -23,7 +26,7 @@ func BuildResponse(response *Response, team Team) Response {
 	response.Address = team.Address
 	response.MobileNo = team.MobileNo
 	response.Status = team.Status
-	response.Role = team.Role
+	// response.Role = team.Role
 	response.Joining_Date = team.Joining_Date
 	return *response
 }
@@ -67,7 +70,7 @@ func BuildUpdateResponse(response *UpdateResponse, team Team) UpdateResponse {
 	response.Address = team.Address
 	response.MobileNo = team.MobileNo
 	response.Status = team.Status
-	response.Role = team.Role
+	// response.Role = team.Role
 	response.Joining_Date = team.Joining_Date
 	return *response
 }
@@ -80,7 +83,7 @@ func BuildLoginResponse(response *LoginResponse, team Team) LoginResponse {
 	response.Address = team.Address
 	response.MobileNo = team.MobileNo
 	response.Status = team.Status
-	response.Role = team.Role
+	// response.Role = team.Role
 	response.Joining_Date = team.Joining_Date
 	response.Token = team.Token
 	return *response
@@ -123,14 +126,15 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	}
 
 	sqlStatement := `
-	INSERT INTO slh_teams ("FirstName","LastName","Email", "Address", "JoiningDate", "CreatedAt", "Password", "MobileNo", "Status", "Role")
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	INSERT INTO slh_teams ("FirstName","LastName","Email", "Address", "JoiningDate", "CreatedAt", "Password", "MobileNo", "Status")
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	RETURNING ("TeamId")`
 
 	team.TeamId = 0
-	err = config.Db.QueryRow(sqlStatement, team.FirstName, team.LastName, team.Email, team.Address, team.Joining_Date, team.CreatedAt, string(hashedPassword), team.MobileNo, team.Status, team.Role).Scan(&team.TeamId)
+	err = config.Db.QueryRow(sqlStatement, team.FirstName, team.LastName, team.Email, team.Address, team.Joining_Date, team.CreatedAt, string(hashedPassword), team.MobileNo, team.Status).Scan(&team.TeamId)
 	if err != nil {
 		w.WriteHeader(http.StatusPreconditionFailed)
+		panic(err)
 		return response, Shared.ErrorMsg{Message: "Email already registered"}
 	}
 	BuildResponse(&response, team)
@@ -152,10 +156,10 @@ func LoginTeam(w http.ResponseWriter, r *http.Request) (LoginResponse, Shared.Er
 		return response, Shared.ErrorMsg{Message: "Fields cannot be empty."}
 	}
 
-	sqlStatement := `SELECT ("TeamId"), ("FirstName"), ("LastName"), ("Email"), ("Password"), ("Address"), ("MobileNo"), ("Status"), ("Role") FROM slh_teams WHERE ("Email")=$1;`
+	sqlStatement := `SELECT ("TeamId"), ("FirstName"), ("LastName"), ("Email"), ("Password"), ("Address"), ("MobileNo"), ("Status") FROM slh_teams WHERE ("Email")=$1;`
 	team := Team{}
 	row := config.Db.QueryRow(sqlStatement, client.Email)
-	err = row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Password, &team.Address, &team.MobileNo, &team.Status, &team.Role)
+	err = row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Password, &team.Address, &team.MobileNo, &team.Status)
 
 	switch err {
 	case sql.ErrNoRows:
@@ -206,16 +210,16 @@ func UpdateTeam(w http.ResponseWriter, r *http.Request) (UpdateResponse, Shared.
 	}
 	// RETURN ARRAY REQUIRED & NOT REQUIRED
 
-	if team.FirstName == "" || team.LastName == "" || team.Email == "" || team.Role == "" || team.Password == "" || team.Address == "" || team.MobileNo == "" || team.Status == "" {
+	if team.FirstName == "" || team.LastName == "" || team.Email == ""  || team.Password == "" || team.Address == "" || team.MobileNo == "" || team.Status == "" {
 		w.WriteHeader(http.StatusPreconditionFailed)
 		return response, Shared.ErrorMsg{Message: "BLANK FIELDS"}
 	}
 
 	userEmail := context.Get(r, middleware.Decoded)
 
-	sqlStatement := ` UPDATE slh_teams SET "FirstName" = $1, "LastName" = $2, "Email" = $3, "Password" = $4, "Address" = $5, "MobileNo" = $6, "Status" = $7, "Role"=$8 WHERE ("Email") = $9`
+	sqlStatement := ` UPDATE slh_teams SET "FirstName" = $1, "LastName" = $2, "Email" = $3, "Password" = $4, "Address" = $5, "MobileNo" = $6, "Status" = $7, WHERE ("Email") = $8`
 
-	_, err = config.Db.Exec(sqlStatement, team.FirstName, team.LastName, team.Email, team.Password, team.Address, team.MobileNo, team.Status, team.Role, userEmail)
+	_, err = config.Db.Exec(sqlStatement, team.FirstName, team.LastName, team.Email, team.Password, team.Address, team.MobileNo, team.Status, userEmail)
 	if err != nil {
 		panic(err)
 	}
@@ -234,16 +238,16 @@ func UpdateMemberDetails(w http.ResponseWriter, r *http.Request) (UpdateResponse
 	}
 	// RETURN ARRAY REQUIRED & NOT REQUIRED
 
-	if team.FirstName == "" || team.LastName == "" || team.Email == "" || team.Role == "" || team.Password == "" || team.Address == "" || team.MobileNo == "" || team.Status == "" {
+	if team.FirstName == "" || team.LastName == "" || team.Email == "" || team.Password == "" || team.Address == "" || team.MobileNo == "" || team.Status == "" {
 		w.WriteHeader(http.StatusPreconditionFailed)
 		return response, Shared.ErrorMsg{Message: "BLANK FIELDS"}
 	}
 
 	userEmail := team.Email
 
-	sqlStatement := ` UPDATE slh_teams SET "FirstName" = $1, "LastName" = $2, "Email" = $3, "Password" = $4, "Address" = $5, "MobileNo" = $6, "Status" = $7, "Role"=$8 WHERE ("Email") = $9`
+	sqlStatement := ` UPDATE slh_teams SET "FirstName" = $1, "LastName" = $2, "Email" = $3, "Password" = $4, "Address" = $5, "MobileNo" = $6, "Status" = $7 WHERE ("Email") = $8`
 
-	_, err = config.Db.Exec(sqlStatement, team.FirstName, team.LastName, team.Email, team.Password, team.Address, team.MobileNo, team.Status, team.Role, userEmail)
+	_, err = config.Db.Exec(sqlStatement, team.FirstName, team.LastName, team.Email, team.Password, team.Address, team.MobileNo, team.Status, userEmail)
 	if err != nil {
 		panic(err)
 	}
@@ -282,10 +286,10 @@ func ViewTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorMsg
 	var team = Response{}
 	userEmail := context.Get(r, middleware.Decoded)
 	fmt.Println(userEmail)
-	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate"), ("Role") FROM slh_teams WHERE ("Email")=$1;`
+	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams WHERE ("Email")=$1;`
 	row := config.Db.QueryRow(sqlStatement, userEmail)
 
-	row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Joining_Date, &team.Role)
+	row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Joining_Date)
 	fmt.Println(team)
 	return team, Shared.ErrorMsg{Message: ""}
 }
@@ -295,28 +299,40 @@ func ViewTeamMember(w http.ResponseWriter, r *http.Request) (Response, Shared.Er
 	var team = Response{}
 	userEmail := context.Get(r, middleware.Decoded)
 	fmt.Println(userEmail)
-	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate"), ("Role") FROM slh_teams WHERE ("Email")=$1;`
+	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams WHERE ("Email")=$1;`
 	row := config.Db.QueryRow(sqlStatement, userEmail)
 
-	row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Joining_Date, &team.Role)
+	row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Joining_Date)
 	fmt.Println(team)
 	return team, Shared.ErrorMsg{Message: ""}
 }
 
 func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorMsg) {
 	r.ParseForm()
+	p := pagination.ParseQuery(r.URL.RequestURI())
+	Limit:=  p.Limit
+	Page:=   p.Page
+	fmt.Println(Limit)
+	fmt.Println(Page)
+	// Cond:   cond,
+	// Orders: p.Sort,
+	// limitInt, err := strconv.Atoi(limit[0]) 
+	// pageInt, err := strconv.Atoi(page[0])
+	offset := Limit*Page
+
 	var teams []Response
 	// TODO:  ORDER + PAGINATION
-	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate"), ("Role") FROM slh_teams WHERE 1=1;`
-	rows, err := config.Db.Query(sqlStatement)
+	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams  ORDER BY ("CreatedAt") DESC LIMIT $1 OFFSET $2 ;`
+	rows, err := config.Db.Query(sqlStatement, Limit,offset)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		panic(err)
 		return teams, Shared.ErrorMsg{Message: "Internal Server Error."}
 	}
 
 	for rows.Next() {
 		var team = Response{}
-		rows.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Joining_Date, &team.Role)
+		rows.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Joining_Date)
 		teams = append(teams, team)
 	}
 	return teams, Shared.ErrorMsg{Message: ""}
