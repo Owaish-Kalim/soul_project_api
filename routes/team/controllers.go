@@ -311,7 +311,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	r.ParseForm()
 	p := pagination.ParseQuery(r.URL.RequestURI())
 	Limit:=  p.Limit 
-	Page:=   p.Page
+	Page:=   p.Page-1
 	fmt.Println(Limit)
 	fmt.Println(Page)
 	// Cond:   cond,
@@ -322,7 +322,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 
 	var teams []Response
 	// TODO:  ORDER + PAGINATION
-	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams  ORDER BY ("CreatedAt") DESC LIMIT $1 OFFSET $2 ;`
+	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams ORDER BY ("CreatedAt") DESC LIMIT $1 OFFSET $2 ;`
 	rows, err := config.Db.Query(sqlStatement, Limit,offset)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
