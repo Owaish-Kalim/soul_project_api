@@ -13,7 +13,6 @@ import (
 	"github.com/rs/cors"
 )
 
-
 func main() {
 	r := mux.NewRouter()
 	handler := cors.Default().Handler(r)
@@ -25,14 +24,19 @@ func main() {
 	r.HandleFunc("/api/users/login", users.Login).Methods("POST")
 
 	r.HandleFunc("/team/login", team.Login).Methods("POST")
-	r.HandleFunc("/team/list", middleware.ValidateTokenMiddleware(team.List)).Methods("GET")
+	// r.HandleFunc("/team/list", middleware.ValidateTokenMiddleware(team.List)).Methods("GET")
+	r.HandleFunc("/team/list", team.List).Methods("GET")
 	r.HandleFunc("/team/add-member", team.Create).Methods("POST")
 	r.HandleFunc("/team/update-member", middleware.ValidateTokenMiddleware(team.Update)).Methods("PUT")
-	r.HandleFunc("/team/update-team-member", middleware.ValidateTokenMiddleware(team.UpdateMember)).Methods("POST")
+	r.HandleFunc("/team/update-member/password", middleware.ValidateTokenMiddleware(team.UpdatePassword)).Methods("PUT")
+	r.HandleFunc("/team/update-team-member", middleware.ValidateTokenMiddleware(team.UpdateMember)).Methods("PUT")
 	r.HandleFunc("/team/view-member", middleware.ValidateTokenMiddleware(team.View)).Methods("GET")
 	// r.HandleFunc(`/team/edit-team-member/{:id}`, middleware.ValidateTokenMiddleware(team.View)).Methods("POST")
 	r.HandleFunc("/team/update-status", middleware.ValidateTokenMiddleware(team.UpdateStatus)).Methods("POST")
-	r.HandleFunc("/api/customers", customers.CrtCustomers).Methods("POST")
+	r.HandleFunc("/team/logout", middleware.ValidateTokenMiddleware(team.Logout)).Methods("GET")
+
+	r.HandleFunc("/customers/registration", customers.Customers).Methods("POST")
+	r.HandleFunc("/customers/booking", customers.Booking).Methods("POST")
 
 	fmt.Println("Starting Server")
 	log.Fatal(http.ListenAndServe(":8000", handler))
