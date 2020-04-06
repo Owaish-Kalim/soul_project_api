@@ -58,4 +58,16 @@ type LoginResponse struct {
 type StatusResponse struct {
 	Email  string `json:"email"`
 	Status string `json:"status"`
+	
+}
+
+type query struct {
+	Limit  int
+	Page int
+	TeamId       int    
+	FirstName    string 
+	LastName     string 
+	Email        string 
+	MobileNo     string 
+	Status       string 
 }
