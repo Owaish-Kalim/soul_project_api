@@ -1,15 +1,16 @@
 package middleware
 
 import (
-	"net/http"
-	"log"
+	"encoding/json"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
+	"log"
+	"net/http"
+	"soul_api/config"
 	"strings"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/context"
-	"encoding/json"
-	"soul_api/config"
+	"github.com/mitchellh/mapstructure"
 )
 
 type ErrorMsg struct {
@@ -21,6 +22,7 @@ var Decoded string
 func ValidateTokenMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		authorizationHeader := req.Header.Get("Authorization")
+		fmt.Println(authorizationHeader)
 		if authorizationHeader != "" {
 			bearerToken := strings.Split(authorizationHeader, " ")
 			if len(bearerToken) == 2 {
@@ -37,20 +39,20 @@ func ValidateTokenMiddleware(next http.HandlerFunc) http.HandlerFunc {
 				}
 				fmt.Println("HEHR")
 				if token.Valid {
-					var email string ;
-					fmt.Println("asdas") ; 
+					var email string
+					fmt.Println("asdas")
 					sqlStatement := `SELECT ("Email") FROM slh_teams WHERE ("Token")=$1;`
-					fmt.Println(1) ;
+					fmt.Println(1)
 					row := config.Db.QueryRow(sqlStatement, bearerToken[1])
 					fmt.Println("HEasfkhaHR")
-					err := row.Scan(&email) 
-					
+					err := row.Scan(&email)
+
 					if err != nil {
-					log.Fatal(err)	 
-					} 
+						log.Fatal(err)
+					}
 					fmt.Println("HEasfkhaHR")
 					mapstructure.Decode(token.Claims, &email)
-					context.Set(req,Decoded,email) 
+					context.Set(req, Decoded, email)
 					next(w, req)
 				} else {
 					json.NewEncoder(w).Encode(ErrorMsg{Message: "Invalid authorization token"})

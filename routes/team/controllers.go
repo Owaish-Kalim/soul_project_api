@@ -6,20 +6,16 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	// "html"
-	// "net/url"
-	// "net"
 	"time"
 
 	"soul_api/config"
 	"soul_api/middleware"
-	"soul_api/routes"
+	Shared "soul_api/routes"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gemcook/pagination-go"
 	"github.com/gorilla/context"
 	"golang.org/x/crypto/bcrypt"
-	
-	//  "github.com/gemcook/pagination-go"
 )
 
 func BuildResponse(response *Response, team Team) Response {
@@ -33,38 +29,6 @@ func BuildResponse(response *Response, team Team) Response {
 	// response.Role = team.Role
 	response.Joining_Date = team.Joining_Date
 	return *response
-}
-
-func CheckEmpty(team Team) Shared.ErrorMsg {
-	if team.FirstName == "" {
-		return Shared.ErrorMsg{Message: "FirstName cannot be empty."}
-	}
-
-	if team.LastName == "" {
-		return Shared.ErrorMsg{Message: "LastName cannot be empty."}
-	}
-
-	if team.Email == "" {
-		return Shared.ErrorMsg{Message: "Email cannot be empty."}
-	}
-
-	if team.Password == "" {
-		return Shared.ErrorMsg{Message: "Password cannot be empty."}
-	}
-
-	if team.Address == "" {
-		return Shared.ErrorMsg{Message: "Address cannot be empty."}
-	}
-
-	if team.MobileNo == "" {
-		return Shared.ErrorMsg{Message: "MobileNo cannot be empty."}
-	}
-
-	if team.Status == "" {
-		return Shared.ErrorMsg{Message: "Status cannot be empty."}
-	}
-
-	return Shared.ErrorMsg{Message: "nil"}
 }
 
 func BuildUpdateResponse(response *UpdateResponse, team Team) UpdateResponse {
@@ -93,6 +57,74 @@ func BuildLoginResponse(response *LoginResponse, team Team) LoginResponse {
 	return *response
 }
 
+func CheckEmpty(team Team, res *Shared.ErrorMsg) {
+
+	if team.FirstName == "" {
+		res.FirstName = "FirstName cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.LastName == "" {
+		res.LastName = "LastName cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.Email == "" {
+		res.Email = "Email cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.Password == "" {
+		res.Password = "Password cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.Address == "" {
+		res.Address = "Address cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.MobileNo == "" {
+		res.MobileNo = "MobileNo cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.Status == "" {
+		res.Status = "Status cannot be empty."
+		res.Message = "Error"
+	}
+
+}
+
+func CheckEmptyUp(team Team, res *Shared.ErrorMsg) {
+
+	if team.FirstName == "" {
+		res.FirstName = "FirstName cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.LastName == "" {
+		res.LastName = "LastName cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.Address == "" {
+		res.Address = "Address cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.MobileNo == "" {
+		res.MobileNo = "MobileNo cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.Status == "" {
+		res.Status = "Status cannot be empty."
+		res.Message = "Error"
+	}
+
+}
+
 func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorMsg) {
 	r.ParseForm()
 	team := Team{}
@@ -102,10 +134,10 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 		panic(err)
 	}
 
-
 	var res Shared.ErrorMsg
-	res = CheckEmpty(team)
-	if res.Message != "nil" {
+	res.Message = ""
+	CheckEmpty(team, &res)
+	if res.Message != "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return response, res
 	}
@@ -116,7 +148,8 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return response, Shared.ErrorMsg{Message: "Internal Server Error."}
+		res.Message = "Internal Server Error."
+		return response, res
 	}
 
 	sqlStatement := `
@@ -128,11 +161,12 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	err = config.Db.QueryRow(sqlStatement, team.FirstName, team.LastName, team.Email, team.Address, team.Joining_Date, team.CreatedAt, string(hashedPassword), team.MobileNo, team.Status).Scan(&team.TeamId)
 	if err != nil {
 		w.WriteHeader(http.StatusPreconditionFailed)
-		panic(err)
-		return response, Shared.ErrorMsg{Message: "Email already registered"}
+		res.Message = "Email already registered"
+		return response, res
 	}
 	BuildResponse(&response, team)
-	return response, Shared.ErrorMsg{Message: ""}
+	res.Message = ""
+	return response, res
 }
 
 func LoginTeam(w http.ResponseWriter, r *http.Request) (LoginResponse, Shared.ErrorMsg) {
@@ -163,7 +197,7 @@ func LoginTeam(w http.ResponseWriter, r *http.Request) (LoginResponse, Shared.Er
 		eror := bcrypt.CompareHashAndPassword([]byte(team.Password), []byte(client.Password))
 		if eror != nil {
 			w.WriteHeader(http.StatusForbidden)
-			return response, Shared.ErrorMsg{Message: "Bad Credentials"}
+			return response, Shared.ErrorMsg{Message: "Email or Password Incorrect."}
 		}
 
 		expirationTime := time.Now().Add(15000 * time.Minute)
@@ -202,20 +236,23 @@ func UpdateTeam(w http.ResponseWriter, r *http.Request) (UpdateResponse, Shared.
 	if err != nil {
 		panic(err)
 	}
-	// RETURN ARRAY REQUIRED & NOT REQUIRED
 
-	if team.FirstName == "" || team.LastName == "" || team.Email == ""  || team.Password == "" || team.Address == "" || team.MobileNo == "" || team.Status == "" {
-		w.WriteHeader(http.StatusPreconditionFailed)
-		return response, Shared.ErrorMsg{Message: "BLANK FIELDS"}
+	var res Shared.ErrorMsg
+	res.Message = ""
+	CheckEmpty(team, &res)
+	if res.Message != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return response, res
 	}
 
 	userEmail := context.Get(r, middleware.Decoded)
 
-	sqlStatement := ` UPDATE slh_teams SET "FirstName" = $1, "LastName" = $2, "Email" = $3, "Password" = $4, "Address" = $5, "MobileNo" = $6, "Status" = $7, WHERE ("Email") = $8`
+	sqlStatement := ` UPDATE slh_teams SET "FirstName" = $1, "LastName" = $2, "Email" = $3, "Password" = $4, "Address" = $5, "MobileNo" = $6, "Status" = $7 WHERE ("Email") = $8`
 
 	_, err = config.Db.Exec(sqlStatement, team.FirstName, team.LastName, team.Email, team.Password, team.Address, team.MobileNo, team.Status, userEmail)
 	if err != nil {
-		panic(err)
+		return response, Shared.ErrorMsg{Message: "Email already registered"}
+		//panic(err)
 	}
 	BuildUpdateResponse(&response, team)
 	return response, Shared.ErrorMsg{Message: ""}
@@ -230,18 +267,20 @@ func UpdateMemberDetails(w http.ResponseWriter, r *http.Request) (UpdateResponse
 	if err != nil {
 		panic(err)
 	}
-	// RETURN ARRAY REQUIRED & NOT REQUIRED
 
-	if team.FirstName == "" || team.LastName == "" || team.Email == "" || team.Password == "" || team.Address == "" || team.MobileNo == "" || team.Status == "" {
-		w.WriteHeader(http.StatusPreconditionFailed)
-		return response, Shared.ErrorMsg{Message: "BLANK FIELDS"}
+	var res Shared.ErrorMsg
+	res.Message = ""
+	CheckEmptyUp(team, &res)
+	if res.Message != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return response, res
 	}
 
 	userEmail := team.Email
+	fmt.Println(userEmail)
+	sqlStatement := ` UPDATE slh_teams SET "FirstName" = $1, "LastName" = $2, "Address" = $3, "MobileNo" = $4, "Status" = $5 WHERE ("Email") = $6`
 
-	sqlStatement := ` UPDATE slh_teams SET "FirstName" = $1, "LastName" = $2, "Email" = $3, "Password" = $4, "Address" = $5, "MobileNo" = $6, "Status" = $7 WHERE ("Email") = $8`
-
-	_, err = config.Db.Exec(sqlStatement, team.FirstName, team.LastName, team.Email, team.Password, team.Address, team.MobileNo, team.Status, userEmail)
+	_, err = config.Db.Exec(sqlStatement, team.FirstName, team.LastName, team.Address, team.MobileNo, team.Status, userEmail)
 	if err != nil {
 		panic(err)
 	}
@@ -340,10 +379,10 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	var teams []Response
 	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams WHERE ("TeamId")=$1 OR ("FirstName") LIKE ''|| $2 ||'%' AND ("LastName") LIKE '' || $3 || '%' AND ("Email") LIKE '' ||$4|| '%' AND ("MobileNo") LIKE '' ||$5|| '%' AND ("Status") LIKE ''|| $6 ||'%' ORDER BY ("CreatedAt") DESC LIMIT $7 OFFSET $8`
 	rows, err := config.Db.Query(sqlStatement,q.TeamId, q.FirstName, q.LastName, q.Email,q.MobileNo,q.Status,q.Limit,offset )
-
+  
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		panic(err)
+		//	panic(err)
 		return teams, Shared.ErrorMsg{Message: "Internal Server Error."}
 	}
 	cnt:=0
@@ -367,4 +406,44 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 
 	fmt.Println(cnt)
 	return teams, Shared.ErrorMsg{Message: ""}
+}
+
+func UpdateMemberPassword(w http.ResponseWriter, r *http.Request) (Team, Shared.ErrorMsg) {
+	w.Header().Set("Content-Type", "application/json")
+	r.ParseForm()
+	var team = Team{}
+	err := json.NewDecoder(r.Body).Decode(&team)
+	if err != nil {
+		panic(err)
+	}
+
+	if team.Password == "" {
+		w.WriteHeader(http.StatusPreconditionFailed)
+		return team, Shared.ErrorMsg{Message: "BLANK FIELDS"}
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(team.Password), 8)
+	userEmail := team.Email
+
+	sqlStatement := ` UPDATE slh_teams SET "Password" = $1  WHERE ("Email") = $2`
+
+	_, err = config.Db.Exec(sqlStatement, string(hashedPassword), userEmail)
+	if err != nil {
+		panic(err)
+	}
+	w.WriteHeader(http.StatusOK)
+	return team, Shared.ErrorMsg{Message: "Password Changed"}
+}
+
+func TeamLogout(w http.ResponseWriter, r *http.Request) Shared.ErrorMsg {
+	r.ParseForm()
+	//var team = Response{}
+	userEmail := context.Get(r, middleware.Decoded)
+	fmt.Println(userEmail)
+	sqlStatement := `UPDATE slh_teams SET "Token"=$1 WHERE "Email"=$2`
+	_, err := config.Db.Exec(sqlStatement, "qw", userEmail)
+	if err != nil {
+		return Shared.ErrorMsg{Message: "Internal Server Error."}
+	}
+	return Shared.ErrorMsg{Message: "Successfully Logout"}
 }
