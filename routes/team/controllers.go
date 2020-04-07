@@ -13,7 +13,7 @@ import (
 	Shared "soul_api/routes"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gemcook/pagination-go"
+	// "github.com/gemcook/pagination-go"
 	"github.com/gorilla/context"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -344,25 +344,25 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	r.ParseForm()
 	var response []Response
 	q := &query{}
-	limit := r.Form.Get("limit");
-	if limit!="" {
+	limit := r.Form.Get("limit")
+	if limit != "" {
 		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
 			return response, Shared.ErrorMsg{Message: "parseerr"}
-	} 
+		}
 	} else {
-		q.Limit = 10;
+		q.Limit = 10
 	}
-	page := r.Form.Get("page");
-	if page!="" {
+	page := r.Form.Get("page")
+	if page != "" {
 		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
 			return response, Shared.ErrorMsg{Message: "parseerr"}
-		} 
-			q.Page = q.Page-1;
+		}
+		q.Page = q.Page - 1
 	} else {
-		q.Page = 0;
+		q.Page = 0
 	}
-	teamid := r.Form.Get("teamid");
-	if teamid!="" {
+	teamid := r.Form.Get("teamid")
+	if teamid != "" {
 		if err := Shared.ParseInt(r.Form.Get("teamid"), &q.TeamId); err != nil {
 			return response, Shared.ErrorMsg{Message: "parseerr"}
 		}
@@ -372,34 +372,33 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	q.Email = r.Form.Get("email")
 	q.MobileNo = r.Form.Get("mobileno")
 	q.Status = r.Form.Get("status")
-	
+
 	fmt.Println(q)
 	offset := q.Limit * q.Page
 
 	var teams []Response
-	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams WHERE ("TeamId")=$1 OR ("FirstName") LIKE ''|| $2 ||'%' AND ("LastName") LIKE '' || $3 || '%' AND ("Email") LIKE '' ||$4|| '%' AND ("MobileNo") LIKE '' ||$5|| '%' AND ("Status") LIKE ''|| $6 ||'%' ORDER BY ("CreatedAt") DESC LIMIT $7 OFFSET $8`
-	rows, err := config.Db.Query(sqlStatement,q.TeamId, q.FirstName, q.LastName, q.Email,q.MobileNo,q.Status,q.Limit,offset )
-  
+	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate"), COUNT(*) FROM slh_teams WHERE ("TeamId")=$1 OR ("FirstName") LIKE ''|| $2 ||'%' AND ("LastName") LIKE '' || $3 || '%' AND ("Email") LIKE '' ||$4|| '%' AND ("MobileNo") LIKE '' ||$5|| '%' AND ("Status") LIKE ''|| $6 ||'%' ORDER BY ("CreatedAt") DESC LIMIT $7 OFFSET $8`
+	rows, err := config.Db.Query(sqlStatement, q.TeamId, q.FirstName, q.LastName, q.Email, q.MobileNo, q.Status, q.Limit, offset)
+
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		//	panic(err)
 		return teams, Shared.ErrorMsg{Message: "Internal Server Error."}
 	}
-	cnt:=0
+	cnt := 0
 
 	// fmt.Println(len(rows))
-
 	for rows.Next() {
 		var team = Response{}
 		rows.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Joining_Date)
 		teams = append(teams, team)
-		cnt = cnt+1
+		cnt = cnt + 1
 	}
-	
+
 	w.Header().Set("Total-Count", strconv.Itoa(cnt))
-	totalPages := cnt/q.Limit 
-	if cnt%q.Limit!=0 {
-		totalPages =totalPages+1;
+	totalPages := cnt / q.Limit
+	if cnt%q.Limit != 0 {
+		totalPages = totalPages + 1
 	}
 
 	w.Header().Set("Total-Pages", strconv.Itoa(totalPages))
