@@ -35,8 +35,18 @@ func main() {
 	r.HandleFunc("/team/update-status", middleware.ValidateTokenMiddleware(team.UpdateStatus)).Methods("POST")
 	r.HandleFunc("/team/logout", middleware.ValidateTokenMiddleware(team.Logout)).Methods("GET")
 
+	r.HandleFunc("/team/has-role", team.HasRole).Methods("GET")
+
 	r.HandleFunc("/customers/registration", customers.Customers).Methods("POST")
 	r.HandleFunc("/customers/booking", customers.Booking).Methods("POST")
+	r.HandleFunc("/customers/transaction", customers.Transaction).Methods("POST")
+	r.HandleFunc("/customers/view", middleware.ValidateTokenMiddleware(customers.View)).Methods("GET")
+	r.HandleFunc("/customers/list", middleware.ValidateTokenMiddleware(customers.List)).Methods("GET")
+	r.HandleFunc("/customers/booking/view", middleware.ValidateTokenMiddleware(customers.ViewBooking)).Methods("GET")
+	r.HandleFunc("/customers/transaction/view", middleware.ValidateTokenMiddleware(customers.ViewTransaction)).Methods("GET")
+	//r.HandleFunc("/customers/list", middleware.ValidateTokenMiddleware(customers.List)).Methods("GET")
+	r.HandleFunc("/customers/update", middleware.ValidateTokenMiddleware(customers.Update)).Methods("PUT")
+	r.HandleFunc("/customers/transaction/update", middleware.ValidateTokenMiddleware(customers.UpdateTransaction)).Methods("PUT")
 
 	fmt.Println("Starting Server")
 	log.Fatal(http.ListenAndServe(":8000", handler))

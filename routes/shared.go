@@ -2,8 +2,9 @@ package Shared
 
 import (
 	// "time"
-	"github.com/dgrijalva/jwt-go"
 	"strconv"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 var JwtKey = []byte("my_secret_key")
@@ -33,9 +34,8 @@ func ParseBool(s string, dest *bool) error {
 func ParseInt(s string, dest *int) error {
 	n, err := strconv.Atoi(s)
 	if err != nil {
-			return err
+		return err
 	}
 	*dest = n
 	return nil
 }
-

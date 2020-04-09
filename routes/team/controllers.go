@@ -5,14 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
-	"time"
-
 	"soul_api/config"
 	"soul_api/middleware"
 	Shared "soul_api/routes"
+	"strconv"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
+
 	// "github.com/gemcook/pagination-go"
 	"github.com/gorilla/context"
 	"golang.org/x/crypto/bcrypt"
@@ -377,22 +377,30 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	offset := q.Limit * q.Page
 
 	var teams []Response
-	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate"), COUNT(*) FROM slh_teams WHERE ("TeamId")=$1 OR ("FirstName") LIKE ''|| $2 ||'%' AND ("LastName") LIKE '' || $3 || '%' AND ("Email") LIKE '' ||$4|| '%' AND ("MobileNo") LIKE '' ||$5|| '%' AND ("Status") LIKE ''|| $6 ||'%' ORDER BY ("CreatedAt") DESC LIMIT $7 OFFSET $8`
+	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams WHERE ("TeamId")=$1 OR ("FirstName") LIKE ''|| $2 ||'%' AND ("LastName") LIKE '' || $3 || '%' AND ("Email") LIKE '' ||$4|| '%' AND ("MobileNo") LIKE '' ||$5|| '%' AND ("Status") LIKE ''|| $6 ||'%' ORDER BY ("CreatedAt") DESC LIMIT $7 OFFSET $8`
 	rows, err := config.Db.Query(sqlStatement, q.TeamId, q.FirstName, q.LastName, q.Email, q.MobileNo, q.Status, q.Limit, offset)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		//	panic(err)
 		return teams, Shared.ErrorMsg{Message: "Internal Server Error."}
 	}
-	cnt := 0
 
 	// fmt.Println(len(rows))
 	for rows.Next() {
 		var team = Response{}
 		rows.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Joining_Date)
 		teams = append(teams, team)
-		cnt = cnt + 1
+		// cnt = cnt + 1
+	}
+
+	sqlStatement = `SELECT COUNT(*) FROM slh_teams WHERE ("TeamId")=$1 OR ("FirstName") LIKE ''|| $2 ||'%' AND ("LastName") LIKE '' || $3 || '%' AND ("Email") LIKE '' ||$4|| '%' AND ("MobileNo") LIKE '' ||$5|| '%' AND ("Status") LIKE ''|| $6 ||'%'`
+	cntRow := config.Db.QueryRow(sqlStatement, q.TeamId, q.FirstName, q.LastName, q.Email, q.MobileNo, q.Status)
+	cnt := 0
+	err = cntRow.Scan(&cnt)
+	if err != nil {
+		panic(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return teams, Shared.ErrorMsg{Message: "Internal Server Error."}
 	}
 
 	w.Header().Set("Total-Count", strconv.Itoa(cnt))
@@ -445,4 +453,38 @@ func TeamLogout(w http.ResponseWriter, r *http.Request) Shared.ErrorMsg {
 		return Shared.ErrorMsg{Message: "Internal Server Error."}
 	}
 	return Shared.ErrorMsg{Message: "Successfully Logout"}
+}
+
+func TeamHasRole(w http.ResponseWriter, r *http.Request) (TeamRole, Shared.ErrorMsg) {
+	r.ParseForm()
+	teamRole := TeamRole{}
+	err := json.NewDecoder(r.Body).Decode(&teamRole)
+	if err != nil {
+		panic(err)
+	}
+
+	sqlStatement := `SELECT ("CreatedAt"), ("Status") FROM slh_teams WHERE ("TeamId")=$1;`
+	row := config.Db.QueryRow(sqlStatement, teamRole.TeamId)
+
+	err = row.Scan(&teamRole.CreatedAt, &teamRole.Status)
+	if err != nil {
+		panic(err)
+	}
+	// fmt.Println(team)
+
+	sqlStatement = `
+	INSERT INTO slh_team_has_role ( "TeamId","CreatedAt","Status")
+	VALUES ($1, $2, $3)
+	RETURNING ("Team_Has_Role_Id")`
+
+	teamRole.Team_Has_Role_Id = 0
+	err = config.Db.QueryRow(sqlStatement, teamRole.TeamId, teamRole.CreatedAt, teamRole.Status).Scan(&teamRole.Team_Has_Role_Id)
+	if err != nil {
+		panic(err)
+		// w.WriteHeader(http.StatusPreconditionFailed)
+		// res.Message = "Email already registered"
+		// return response, res
+	}
+
+	return teamRole, Shared.ErrorMsg{}
 }
