@@ -126,13 +126,25 @@ type Resp struct {
 }
 
 type query struct {
-	Limit              int
-	Page               int
-	Customer_Souls_Id  string
-	Customer_Name      string
-	Customer_Order_Id  string
-	Customer_Mobile_No int
-	Status             string
+	Limit                   int
+	Page                    int
+	Customer_Souls_Id       string
+	Customer_Name           string
+	Customer_Order_Id       string
+	Customer_Mobile_No      int
+	Status                  bool
+	Customer_Gender         string
+	Customer_Email          string
+	Registered_Source       string
+	Customer_Address        string
+	Massage_Duration        string
+	Massage_For             string
+	Merchant_Transaction_Id string
+	Total_Order_Amount      int
+	Payment_Gateway_Id      string
+	Payment_Gateway_Mode    string
+	Transaction_Mode        string
+	Bank_Type               string
 }
 
 func CheckEmptyList(customer Customer, res *ErrorMsg) {

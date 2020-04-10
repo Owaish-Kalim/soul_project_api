@@ -26,7 +26,7 @@ func BuildResponse(response *Response, team Team) Response {
 	response.Address = team.Address
 	response.MobileNo = team.MobileNo
 	response.Status = team.Status
-	// response.Role = team.Role
+	response.Role = team.Role
 	response.Joining_Date = team.Joining_Date
 	return *response
 }
@@ -153,19 +153,45 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	}
 
 	sqlStatement := `
-	INSERT INTO slh_teams ("FirstName","LastName","Email", "Address", "JoiningDate", "CreatedAt", "Password", "MobileNo", "Status")
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	INSERT INTO slh_teams ("FirstName","LastName","Email", "Address", "JoiningDate", "CreatedAt", "Password", "MobileNo", "Status", "Role")
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	RETURNING ("TeamId")`
 
 	team.TeamId = 0
-	err = config.Db.QueryRow(sqlStatement, team.FirstName, team.LastName, team.Email, team.Address, team.Joining_Date, team.CreatedAt, string(hashedPassword), team.MobileNo, team.Status).Scan(&team.TeamId)
+	err = config.Db.QueryRow(sqlStatement, team.FirstName, team.LastName, team.Email, team.Address, team.Joining_Date, team.CreatedAt, string(hashedPassword), team.MobileNo, team.Status, team.Role).Scan(&team.TeamId)
 	if err != nil {
+		panic(err)
 		w.WriteHeader(http.StatusPreconditionFailed)
 		res.Message = "Email already registered"
 		return response, res
 	}
 	BuildResponse(&response, team)
 	res.Message = ""
+
+	team_role := TeamRole{}
+	team_role.UpdatedAt = time.Now().Local()
+
+	sqlStatement = `SELECT ("Role_Id") FROM slh_roles WHERE ("Role_Name" = $1);`
+	row := config.Db.QueryRow(sqlStatement, team.Role)
+	err = row.Scan(&team_role.Team_Has_Role_Id)
+	if err != nil {
+		fmt.Println(1)
+		panic(err)
+	}
+
+	sqlStatement = `
+	INSERT INTO slh_team_has_role ("Team_Id","Team_Has_Role_Id","CreatedAt", "Status", "UpdatedAt")  
+	VALUES ($1, $2, $3, $4, $5)`
+
+	_, err = config.Db.Exec(sqlStatement, team.TeamId, team_role.Team_Has_Role_Id, team.CreatedAt, team.Status, team_role.UpdatedAt)
+	if err != nil {
+		fmt.Println(2)
+		panic(err)
+		w.WriteHeader(http.StatusPreconditionFailed)
+		res.Message = "Email already registered"
+		return response, res
+	}
+
 	return response, res
 }
 
@@ -377,7 +403,9 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	offset := q.Limit * q.Page
 
 	var teams []Response
-	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams WHERE ("TeamId")=$1 OR ("FirstName") LIKE ''|| $2 ||'%' AND ("LastName") LIKE '' || $3 || '%' AND ("Email") LIKE '' ||$4|| '%' AND ("MobileNo") LIKE '' ||$5|| '%' AND ("Status") LIKE ''|| $6 ||'%' ORDER BY ("CreatedAt") DESC LIMIT $7 OFFSET $8`
+	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams 
+	WHERE ("TeamId")=$1 OR ("FirstName") LIKE ''|| $2 ||'%' AND ("LastName") LIKE '' || $3 || '%' AND ("Email") LIKE '' ||$4|| '%' AND 
+	("MobileNo") LIKE '' ||$5|| '%' AND ("Status") LIKE ''|| $6 ||'%' ORDER BY ("CreatedAt") DESC LIMIT $7 OFFSET $8`
 	rows, err := config.Db.Query(sqlStatement, q.TeamId, q.FirstName, q.LastName, q.Email, q.MobileNo, q.Status, q.Limit, offset)
 
 	if err != nil {
@@ -393,7 +421,8 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 		// cnt = cnt + 1
 	}
 
-	sqlStatement = `SELECT COUNT(*) FROM slh_teams WHERE ("TeamId")=$1 OR ("FirstName") LIKE ''|| $2 ||'%' AND ("LastName") LIKE '' || $3 || '%' AND ("Email") LIKE '' ||$4|| '%' AND ("MobileNo") LIKE '' ||$5|| '%' AND ("Status") LIKE ''|| $6 ||'%'`
+	sqlStatement = `SELECT COUNT(*) FROM slh_teams WHERE ("TeamId")=$1 OR ("FirstName") LIKE ''|| $2 ||'%' AND ("LastName") LIKE '' || $3 || '%' AND 
+	("Email") LIKE '' ||$4|| '%' AND ("MobileNo") LIKE '' ||$5|| '%' AND ("Status") LIKE ''|| $6 ||'%'`
 	cntRow := config.Db.QueryRow(sqlStatement, q.TeamId, q.FirstName, q.LastName, q.Email, q.MobileNo, q.Status)
 	cnt := 0
 	err = cntRow.Scan(&cnt)
@@ -455,36 +484,135 @@ func TeamLogout(w http.ResponseWriter, r *http.Request) Shared.ErrorMsg {
 	return Shared.ErrorMsg{Message: "Successfully Logout"}
 }
 
-func TeamHasRole(w http.ResponseWriter, r *http.Request) (TeamRole, Shared.ErrorMsg) {
+func TeamHasRole(w http.ResponseWriter, r *http.Request) ([]TeamRole, Shared.ErrorMsg) {
 	r.ParseForm()
-	teamRole := TeamRole{}
-	err := json.NewDecoder(r.Body).Decode(&teamRole)
+	var response []TeamRole
+	q := &query{}
+	limit := r.Form.Get("limit")
+	if limit != "" {
+		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
+			return response, Shared.ErrorMsg{Message: "parseerr"}
+		}
+	} else {
+		q.Limit = 10
+	}
+	page := r.Form.Get("page")
+	if page != "" {
+		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
+			return response, Shared.ErrorMsg{Message: "parseerr"}
+		}
+		q.Page = q.Page - 1
+	} else {
+		q.Page = 0
+	}
+	teamid := r.Form.Get("teamid")
+	if teamid != "" {
+		if err := Shared.ParseInt(r.Form.Get("teamid"), &q.TeamId); err != nil {
+			return response, Shared.ErrorMsg{Message: "parseerr"}
+		}
+	}
+	q.Status = r.Form.Get("status")
+
+	fmt.Println(q)
+	offset := q.Limit * q.Page
+
+	var teamRoles []TeamRole
+	fmt.Println(12)
+	sqlStatement := `SELECT ("Team_Has_Role_Id"),("Team_Id"),("Status"),("CreatedAt"),("UpdatedAt") FROM slh_team_has_role 
+	WHERE ("Status") LIKE ''|| $1 ||'%' ORDER BY ("CreatedAt") DESC LIMIT $2 OFFSET $3`
+	rows, err := config.Db.Query(sqlStatement, q.Status, q.Limit, offset)
+	fmt.Println(13)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return response, Shared.ErrorMsg{Message: "Internal Server Error."}
+	}
+
+	for rows.Next() {
+		var team = TeamRole{}
+		rows.Scan(&team.Team_Has_Role_Id, &team.TeamId, &team.Status, &team.CreatedAt, &team.UpdatedAt)
+		teamRoles = append(teamRoles, team)
+	}
+
+	sqlStatement = `SELECT COUNT(*) FROM slh_team_has_role WHERE ("Status") LIKE ''|| $1 ||'%'`
+	cntRow := config.Db.QueryRow(sqlStatement, q.Status)
+	fmt.Println(14)
+	cnt := 0
+	err = cntRow.Scan(&cnt)
+	if err != nil {
+		panic(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return teamRoles, Shared.ErrorMsg{Message: "Internal Server Error."}
+	}
+
+	w.Header().Set("Total-Count", strconv.Itoa(cnt))
+	totalPages := cnt / q.Limit
+	if cnt%q.Limit != 0 {
+		totalPages = totalPages + 1
+	}
+
+	w.Header().Set("Total-Pages", strconv.Itoa(totalPages))
+
+	fmt.Println(cnt)
+	fmt.Println(15)
+	return teamRoles, Shared.ErrorMsg{Message: ""}
+}
+
+func Role_Team(w http.ResponseWriter, r *http.Request) (Roles, ErrorMessage) {
+	r.ParseForm()
+	roles := Roles{}
+	err := json.NewDecoder(r.Body).Decode(&roles)
 	if err != nil {
 		panic(err)
 	}
 
-	sqlStatement := `SELECT ("CreatedAt"), ("Status") FROM slh_teams WHERE ("TeamId")=$1;`
-	row := config.Db.QueryRow(sqlStatement, teamRole.TeamId)
+	roles.Status = true
 
-	err = row.Scan(&teamRole.CreatedAt, &teamRole.Status)
+	sqlStatement := `
+	INSERT INTO slh_roles ("Role_Name", "Role_Status") 
+	VALUES ($1, $2)
+	RETURNING ("Role_Id")`
+
+	roles.Role_Id = 0
+	err = config.Db.QueryRow(sqlStatement, roles.Role_Name, roles.Status).Scan(&roles.Role_Id)
+	if err != nil {
+		return Roles{}, ErrorMessage{Message: "Role_Name already Registered"}
+	}
+
+	return roles, ErrorMessage{}
+}
+
+func TeamHasRoleUpdate(w http.ResponseWriter, r *http.Request) (RoleUp, ErrorMessage) {
+	fmt.Println(4)
+	r.ParseForm()
+	roles := RoleUp{}
+	err := json.NewDecoder(r.Body).Decode(&roles)
 	if err != nil {
 		panic(err)
 	}
-	// fmt.Println(team)
 
-	sqlStatement = `
-	INSERT INTO slh_team_has_role ( "TeamId","CreatedAt","Status")
-	VALUES ($1, $2, $3)
-	RETURNING ("Team_Has_Role_Id")`
-
-	teamRole.Team_Has_Role_Id = 0
-	err = config.Db.QueryRow(sqlStatement, teamRole.TeamId, teamRole.CreatedAt, teamRole.Status).Scan(&teamRole.Team_Has_Role_Id)
+	sqlStatement := `SELECT ("Role_Id") FROM slh_roles WHERE ("Role_Name")=$1;`
+	row := config.Db.QueryRow(sqlStatement, roles.Role_Name)
+	err = row.Scan(&roles.Role_Id)
 	if err != nil {
+		fmt.Println(1)
 		panic(err)
-		// w.WriteHeader(http.StatusPreconditionFailed)
-		// res.Message = "Email already registered"
-		// return response, res
 	}
 
-	return teamRole, Shared.ErrorMsg{}
+	sqlStatement = ` UPDATE slh_team_has_role SET "Team_Has_Role_Id" = $1  WHERE ("Team_Id") = $2`
+
+	_, err = config.Db.Exec(sqlStatement, roles.Role_Id, roles.TeamId)
+	if err != nil {
+		fmt.Println(2)
+		panic(err)
+	}
+
+	sqlStatement = ` UPDATE slh_teams SET "Role" = $1  WHERE ("TeamId") = $2`
+
+	_, err = config.Db.Exec(sqlStatement, roles.Role_Name, roles.TeamId)
+	if err != nil {
+		fmt.Println(3)
+		panic(err)
+	}
+
+	return roles, ErrorMessage{}
 }

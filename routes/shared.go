@@ -17,7 +17,7 @@ type ErrorMsg struct {
 	Address   string `json:"address"`
 	MobileNo  string `json:"mobileno"`
 	Status    string `json:"status"`
-	Password  string `json: "password"`
+	Password  string `json:"password"`
 }
 
 type Claims struct {

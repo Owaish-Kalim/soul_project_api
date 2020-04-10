@@ -35,7 +35,9 @@ func main() {
 	r.HandleFunc("/team/update-status", middleware.ValidateTokenMiddleware(team.UpdateStatus)).Methods("POST")
 	r.HandleFunc("/team/logout", middleware.ValidateTokenMiddleware(team.Logout)).Methods("GET")
 
-	r.HandleFunc("/team/has-role", team.HasRole).Methods("GET")
+	r.HandleFunc("/team/has-role/view", middleware.ValidateTokenMiddleware(team.HasRole)).Methods("GET")
+	r.HandleFunc("/team/has-role/update", middleware.ValidateTokenMiddleware(team.HasRoleUpdate)).Methods("PUT")
+	r.HandleFunc("/team/role", middleware.ValidateTokenMiddleware(team.Role)).Methods("POST")
 
 	r.HandleFunc("/customers/registration", customers.Customers).Methods("POST")
 	r.HandleFunc("/customers/booking", customers.Booking).Methods("POST")
@@ -43,7 +45,9 @@ func main() {
 	r.HandleFunc("/customers/view", middleware.ValidateTokenMiddleware(customers.View)).Methods("GET")
 	r.HandleFunc("/customers/list", middleware.ValidateTokenMiddleware(customers.List)).Methods("GET")
 	r.HandleFunc("/customers/booking/view", middleware.ValidateTokenMiddleware(customers.ViewBooking)).Methods("GET")
+	r.HandleFunc("/customers/booking/list", middleware.ValidateTokenMiddleware(customers.ListBooking)).Methods("GET")
 	r.HandleFunc("/customers/transaction/view", middleware.ValidateTokenMiddleware(customers.ViewTransaction)).Methods("GET")
+	r.HandleFunc("/customers/transaction/list", middleware.ValidateTokenMiddleware(customers.ListTransaction)).Methods("GET")
 	//r.HandleFunc("/customers/list", middleware.ValidateTokenMiddleware(customers.List)).Methods("GET")
 	r.HandleFunc("/customers/update", middleware.ValidateTokenMiddleware(customers.Update)).Methods("PUT")
 	r.HandleFunc("/customers/transaction/update", middleware.ValidateTokenMiddleware(customers.UpdateTransaction)).Methods("PUT")

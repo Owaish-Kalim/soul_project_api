@@ -2,6 +2,7 @@ package customers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -88,6 +89,21 @@ func ViewBooking(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(customer)
 }
 
+func ListBooking(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(1234)
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != "GET" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+	customer, err := ListCustomerBooking(w, r)
+	if err.Message != "" {
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+	json.NewEncoder(w).Encode(customer)
+}
+
 func ViewTransaction(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != "GET" {
@@ -95,6 +111,20 @@ func ViewTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	customer, err := ViewCustomerTransaction(w, r)
+	if err.Message != "" {
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+	json.NewEncoder(w).Encode(customer)
+}
+
+func ListTransaction(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != "GET" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+	customer, err := ListCustomerTransaction(w, r)
 	if err.Message != "" {
 		json.NewEncoder(w).Encode(err)
 		return
