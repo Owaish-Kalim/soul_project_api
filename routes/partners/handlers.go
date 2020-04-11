@@ -1,4 +1,4 @@
-package customers
+package partners
 
 import (
 	"encoding/json"
@@ -7,34 +7,20 @@ import (
 )
 
 func Create(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("ppopop")
 	w.Header().Set("Content-Type", "application/json")
-
 	if r.Method != "POST" {
 		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
 		return
 	}
-
-	customer, err := AddCustomer(w, r)
+	partner, err := CreatePartner(w, r)
 	if err.Message != "" {
 		json.NewEncoder(w).Encode(err)
 		return
 	}
+	w.WriteHeader(http.StatusOK)
 
-	json.NewEncoder(w).Encode(customer)
-}
-
-func View(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	if r.Method != "GET" {
-		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
-		return
-	}
-	customer, err := ViewCustomer(w, r)
-	if err.Message != "" {
-		json.NewEncoder(w).Encode(err)
-		return
-	}
-	json.NewEncoder(w).Encode(customer)
+	json.NewEncoder(w).Encode(partner)
 }
 
 func Update(w http.ResponseWriter, r *http.Request) {
@@ -43,25 +29,24 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
 		return
 	}
-	customer, err := UpdateCustomer(w, r)
+	partner, err := UpdatePartner(w, r)
 	if err.Message != "" {
 		json.NewEncoder(w).Encode(err)
 		return
 	}
-	json.NewEncoder(w).Encode(customer)
+	json.NewEncoder(w).Encode(partner)
 }
 
 func List(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Viany")
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method != "GET" {
 		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
 		return
 	}
-	customer, err := ListCustomer(w, r)
+	partner, err := ListPartner(w, r)
 	if err.Message != "" {
 		json.NewEncoder(w).Encode(err)
 		return
 	}
-	json.NewEncoder(w).Encode(customer)
+	json.NewEncoder(w).Encode(partner)
 }

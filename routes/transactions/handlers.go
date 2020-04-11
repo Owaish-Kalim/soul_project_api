@@ -1,8 +1,7 @@
-package customers
+package transactions
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -14,12 +13,14 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	customer, err := AddCustomer(w, r)
+	customer, err := CustomerTransaction(w, r)
+	// fmt.Println(team)
 	if err.Message != "" {
 		json.NewEncoder(w).Encode(err)
 		return
 	}
 
+	// w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(customer)
 }
 
@@ -29,7 +30,21 @@ func View(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
 		return
 	}
-	customer, err := ViewCustomer(w, r)
+	customer, err := ViewCustomerTransaction(w, r)
+	if err.Message != "" {
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+	json.NewEncoder(w).Encode(customer)
+}
+
+func List(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != "GET" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+	customer, err := ListCustomerTransaction(w, r)
 	if err.Message != "" {
 		json.NewEncoder(w).Encode(err)
 		return
@@ -43,22 +58,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
 		return
 	}
-	customer, err := UpdateCustomer(w, r)
-	if err.Message != "" {
-		json.NewEncoder(w).Encode(err)
-		return
-	}
-	json.NewEncoder(w).Encode(customer)
-}
-
-func List(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Viany")
-	w.Header().Set("Content-Type", "application/json")
-	if r.Method != "GET" {
-		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
-		return
-	}
-	customer, err := ListCustomer(w, r)
+	customer, err := UpdateCustomerTransaction(w, r)
 	if err.Message != "" {
 		json.NewEncoder(w).Encode(err)
 		return

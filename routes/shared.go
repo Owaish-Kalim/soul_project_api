@@ -9,6 +9,10 @@ import (
 
 var JwtKey = []byte("my_secret_key")
 
+type ErrorMessage struct {
+	Message string `json:"message"`
+}
+
 type ErrorMsg struct {
 	Message   string `json:"message"`
 	FirstName string `json:"firstname"`
@@ -23,6 +27,11 @@ type ErrorMsg struct {
 type Claims struct {
 	Username string `json:"username"`
 	jwt.StandardClaims
+}
+
+type Result interface {
+	LastInsertId() (int64, error)
+	RowsAffected() (int64, error)
 }
 
 func ParseBool(s string, dest *bool) error {

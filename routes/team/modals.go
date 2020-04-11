@@ -1,6 +1,7 @@
 package team
 
 import (
+	Shared "soul_api/routes"
 	"time"
 )
 
@@ -70,6 +71,12 @@ type query struct {
 	Email     string
 	MobileNo  string
 	Status    string
+	Role      string
+	Address   string
+}
+
+type ErrorMessage struct {
+	Message string `json:"message"`
 }
 
 type TeamRole struct {
@@ -78,21 +85,113 @@ type TeamRole struct {
 	Status           string `json:"status"`
 	UpdatedAt        time.Time
 	CreatedAt        time.Time
+	FirstName        string `json:"first_name"`
+	LastName         string `json:"last_name"`
 }
 
-type RoleUp struct {
-	Team_Has_Role_Id int    `json:"team_has_role_id"`
-	TeamId           int    `json:"teamid"`
-	Role_Id          int    `json:"role_id"`
-	Role_Name        string `json:"role_name"`
+func BuildResponse(response *Response, team Team) Response {
+	response.TeamId = team.TeamId
+	response.FirstName = team.FirstName
+	response.LastName = team.LastName
+	response.Email = team.Email
+	response.Address = team.Address
+	response.MobileNo = team.MobileNo
+	response.Status = team.Status
+	response.Role = team.Role
+	response.Joining_Date = team.Joining_Date
+	return *response
 }
 
-type Roles struct {
-	Role_Id   int    `json:"role_id"`
-	Role_Name string `json:"role_name"`
-	Status    bool   `json:"status"`
+func BuildUpdateResponse(response *UpdateResponse, team Team) UpdateResponse {
+	response.FirstName = team.FirstName
+	response.LastName = team.LastName
+	response.Email = team.Email
+	response.Address = team.Address
+	response.MobileNo = team.MobileNo
+	response.Status = team.Status
+	// response.Role = team.Role
+	response.Joining_Date = team.Joining_Date
+	return *response
 }
 
-type ErrorMessage struct {
-	Message string `json:"message"`
+func BuildLoginResponse(response *LoginResponse, team Team) LoginResponse {
+	response.TeamId = team.TeamId
+	response.FirstName = team.FirstName
+	response.LastName = team.LastName
+	response.Email = team.Email
+	response.Address = team.Address
+	response.MobileNo = team.MobileNo
+	response.Status = team.Status
+	// response.Role = team.Role
+	response.Joining_Date = team.Joining_Date
+	response.Token = team.Token
+	return *response
+}
+
+func CheckEmpty(team Team, res *Shared.ErrorMsg) {
+
+	if team.FirstName == "" {
+		res.FirstName = "FirstName cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.LastName == "" {
+		res.LastName = "LastName cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.Email == "" {
+		res.Email = "Email cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.Password == "" {
+		res.Password = "Password cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.Address == "" {
+		res.Address = "Address cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.MobileNo == "" {
+		res.MobileNo = "MobileNo cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.Status == "" {
+		res.Status = "Status cannot be empty."
+		res.Message = "Error"
+	}
+
+}
+
+func CheckEmptyUp(team Team, res *Shared.ErrorMsg) {
+
+	if team.FirstName == "" {
+		res.FirstName = "FirstName cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.LastName == "" {
+		res.LastName = "LastName cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.Address == "" {
+		res.Address = "Address cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.MobileNo == "" {
+		res.MobileNo = "MobileNo cannot be empty."
+		res.Message = "Error"
+	}
+
+	if team.Status == "" {
+		res.Status = "Status cannot be empty."
+		res.Message = "Error"
+	}
+
 }

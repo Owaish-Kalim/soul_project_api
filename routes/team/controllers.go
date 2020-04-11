@@ -18,113 +18,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func BuildResponse(response *Response, team Team) Response {
-	response.TeamId = team.TeamId
-	response.FirstName = team.FirstName
-	response.LastName = team.LastName
-	response.Email = team.Email
-	response.Address = team.Address
-	response.MobileNo = team.MobileNo
-	response.Status = team.Status
-	response.Role = team.Role
-	response.Joining_Date = team.Joining_Date
-	return *response
-}
-
-func BuildUpdateResponse(response *UpdateResponse, team Team) UpdateResponse {
-	response.FirstName = team.FirstName
-	response.LastName = team.LastName
-	response.Email = team.Email
-	response.Address = team.Address
-	response.MobileNo = team.MobileNo
-	response.Status = team.Status
-	// response.Role = team.Role
-	response.Joining_Date = team.Joining_Date
-	return *response
-}
-
-func BuildLoginResponse(response *LoginResponse, team Team) LoginResponse {
-	response.TeamId = team.TeamId
-	response.FirstName = team.FirstName
-	response.LastName = team.LastName
-	response.Email = team.Email
-	response.Address = team.Address
-	response.MobileNo = team.MobileNo
-	response.Status = team.Status
-	// response.Role = team.Role
-	response.Joining_Date = team.Joining_Date
-	response.Token = team.Token
-	return *response
-}
-
-func CheckEmpty(team Team, res *Shared.ErrorMsg) {
-
-	if team.FirstName == "" {
-		res.FirstName = "FirstName cannot be empty."
-		res.Message = "Error"
-	}
-
-	if team.LastName == "" {
-		res.LastName = "LastName cannot be empty."
-		res.Message = "Error"
-	}
-
-	if team.Email == "" {
-		res.Email = "Email cannot be empty."
-		res.Message = "Error"
-	}
-
-	if team.Password == "" {
-		res.Password = "Password cannot be empty."
-		res.Message = "Error"
-	}
-
-	if team.Address == "" {
-		res.Address = "Address cannot be empty."
-		res.Message = "Error"
-	}
-
-	if team.MobileNo == "" {
-		res.MobileNo = "MobileNo cannot be empty."
-		res.Message = "Error"
-	}
-
-	if team.Status == "" {
-		res.Status = "Status cannot be empty."
-		res.Message = "Error"
-	}
-
-}
-
-func CheckEmptyUp(team Team, res *Shared.ErrorMsg) {
-
-	if team.FirstName == "" {
-		res.FirstName = "FirstName cannot be empty."
-		res.Message = "Error"
-	}
-
-	if team.LastName == "" {
-		res.LastName = "LastName cannot be empty."
-		res.Message = "Error"
-	}
-
-	if team.Address == "" {
-		res.Address = "Address cannot be empty."
-		res.Message = "Error"
-	}
-
-	if team.MobileNo == "" {
-		res.MobileNo = "MobileNo cannot be empty."
-		res.Message = "Error"
-	}
-
-	if team.Status == "" {
-		res.Status = "Status cannot be empty."
-		res.Message = "Error"
-	}
-
-}
-
 func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorMsg) {
 	r.ParseForm()
 	team := Team{}
@@ -180,10 +73,10 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	}
 
 	sqlStatement = `
-	INSERT INTO slh_team_has_role ("Team_Id","Team_Has_Role_Id","CreatedAt", "Status", "UpdatedAt")  
-	VALUES ($1, $2, $3, $4, $5)`
+	INSERT INTO slh_team_has_role ("Team_Id", "FirstName", "LastName", "Team_Has_Role_Id","CreatedAt", "Status", "UpdatedAt")  
+	VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
-	_, err = config.Db.Exec(sqlStatement, team.TeamId, team_role.Team_Has_Role_Id, team.CreatedAt, team.Status, team_role.UpdatedAt)
+	_, err = config.Db.Exec(sqlStatement, team.TeamId, team.FirstName, team.LastName, team_role.Team_Has_Role_Id, team.CreatedAt, team.Status, team_role.UpdatedAt)
 	if err != nil {
 		fmt.Println(2)
 		panic(err)
@@ -393,6 +286,8 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 			return response, Shared.ErrorMsg{Message: "parseerr"}
 		}
 	}
+	// q.TeamId = r.Form.Get("teamid")
+
 	q.FirstName = r.Form.Get("firstname")
 	q.LastName = r.Form.Get("lastname")
 	q.Email = r.Form.Get("email")
@@ -404,11 +299,17 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 
 	var teams []Response
 	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams 
-	WHERE ("TeamId")=$1 OR ("FirstName") LIKE ''|| $2 ||'%' AND ("LastName") LIKE '' || $3 || '%' AND ("Email") LIKE '' ||$4|| '%' AND 
-	("MobileNo") LIKE '' ||$5|| '%' AND ("Status") LIKE ''|| $6 ||'%' ORDER BY ("CreatedAt") DESC LIMIT $7 OFFSET $8`
+	WHERE ("TeamId")::text ilike  ''|| $1 ||'%'
+	OR ("FirstName") ILIKE ''|| $2 ||'%' 
+	AND ("LastName") ILIKE '' || $3 || '%' 
+	AND ("Email") ILIKE '' ||$4|| '%'  
+	AND ("MobileNo") ILIKE '' ||$5|| '%' 
+	AND ("Status") ILIKE ''|| $6 ||'%' 
+	ORDER BY ("CreatedAt") DESC LIMIT $7 OFFSET $8`
 	rows, err := config.Db.Query(sqlStatement, q.TeamId, q.FirstName, q.LastName, q.Email, q.MobileNo, q.Status, q.Limit, offset)
-
+	// fmt.Println(rows)
 	if err != nil {
+		panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return teams, Shared.ErrorMsg{Message: "Internal Server Error."}
 	}
@@ -416,6 +317,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	// fmt.Println(len(rows))
 	for rows.Next() {
 		var team = Response{}
+		// fmt.Println(100)
 		rows.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Joining_Date)
 		teams = append(teams, team)
 		// cnt = cnt + 1
@@ -440,6 +342,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 
 	w.Header().Set("Total-Pages", strconv.Itoa(totalPages))
 
+	fmt.Println(cnt)
 	fmt.Println(cnt)
 	return teams, Shared.ErrorMsg{Message: ""}
 }
@@ -482,137 +385,4 @@ func TeamLogout(w http.ResponseWriter, r *http.Request) Shared.ErrorMsg {
 		return Shared.ErrorMsg{Message: "Internal Server Error."}
 	}
 	return Shared.ErrorMsg{Message: "Successfully Logout"}
-}
-
-func TeamHasRole(w http.ResponseWriter, r *http.Request) ([]TeamRole, Shared.ErrorMsg) {
-	r.ParseForm()
-	var response []TeamRole
-	q := &query{}
-	limit := r.Form.Get("limit")
-	if limit != "" {
-		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
-			return response, Shared.ErrorMsg{Message: "parseerr"}
-		}
-	} else {
-		q.Limit = 10
-	}
-	page := r.Form.Get("page")
-	if page != "" {
-		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
-			return response, Shared.ErrorMsg{Message: "parseerr"}
-		}
-		q.Page = q.Page - 1
-	} else {
-		q.Page = 0
-	}
-	teamid := r.Form.Get("teamid")
-	if teamid != "" {
-		if err := Shared.ParseInt(r.Form.Get("teamid"), &q.TeamId); err != nil {
-			return response, Shared.ErrorMsg{Message: "parseerr"}
-		}
-	}
-	q.Status = r.Form.Get("status")
-
-	fmt.Println(q)
-	offset := q.Limit * q.Page
-
-	var teamRoles []TeamRole
-	fmt.Println(12)
-	sqlStatement := `SELECT ("Team_Has_Role_Id"),("Team_Id"),("Status"),("CreatedAt"),("UpdatedAt") FROM slh_team_has_role 
-	WHERE ("Status") LIKE ''|| $1 ||'%' ORDER BY ("CreatedAt") DESC LIMIT $2 OFFSET $3`
-	rows, err := config.Db.Query(sqlStatement, q.Status, q.Limit, offset)
-	fmt.Println(13)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return response, Shared.ErrorMsg{Message: "Internal Server Error."}
-	}
-
-	for rows.Next() {
-		var team = TeamRole{}
-		rows.Scan(&team.Team_Has_Role_Id, &team.TeamId, &team.Status, &team.CreatedAt, &team.UpdatedAt)
-		teamRoles = append(teamRoles, team)
-	}
-
-	sqlStatement = `SELECT COUNT(*) FROM slh_team_has_role WHERE ("Status") LIKE ''|| $1 ||'%'`
-	cntRow := config.Db.QueryRow(sqlStatement, q.Status)
-	fmt.Println(14)
-	cnt := 0
-	err = cntRow.Scan(&cnt)
-	if err != nil {
-		panic(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return teamRoles, Shared.ErrorMsg{Message: "Internal Server Error."}
-	}
-
-	w.Header().Set("Total-Count", strconv.Itoa(cnt))
-	totalPages := cnt / q.Limit
-	if cnt%q.Limit != 0 {
-		totalPages = totalPages + 1
-	}
-
-	w.Header().Set("Total-Pages", strconv.Itoa(totalPages))
-
-	fmt.Println(cnt)
-	fmt.Println(15)
-	return teamRoles, Shared.ErrorMsg{Message: ""}
-}
-
-func Role_Team(w http.ResponseWriter, r *http.Request) (Roles, ErrorMessage) {
-	r.ParseForm()
-	roles := Roles{}
-	err := json.NewDecoder(r.Body).Decode(&roles)
-	if err != nil {
-		panic(err)
-	}
-
-	roles.Status = true
-
-	sqlStatement := `
-	INSERT INTO slh_roles ("Role_Name", "Role_Status") 
-	VALUES ($1, $2)
-	RETURNING ("Role_Id")`
-
-	roles.Role_Id = 0
-	err = config.Db.QueryRow(sqlStatement, roles.Role_Name, roles.Status).Scan(&roles.Role_Id)
-	if err != nil {
-		return Roles{}, ErrorMessage{Message: "Role_Name already Registered"}
-	}
-
-	return roles, ErrorMessage{}
-}
-
-func TeamHasRoleUpdate(w http.ResponseWriter, r *http.Request) (RoleUp, ErrorMessage) {
-	fmt.Println(4)
-	r.ParseForm()
-	roles := RoleUp{}
-	err := json.NewDecoder(r.Body).Decode(&roles)
-	if err != nil {
-		panic(err)
-	}
-
-	sqlStatement := `SELECT ("Role_Id") FROM slh_roles WHERE ("Role_Name")=$1;`
-	row := config.Db.QueryRow(sqlStatement, roles.Role_Name)
-	err = row.Scan(&roles.Role_Id)
-	if err != nil {
-		fmt.Println(1)
-		panic(err)
-	}
-
-	sqlStatement = ` UPDATE slh_team_has_role SET "Team_Has_Role_Id" = $1  WHERE ("Team_Id") = $2`
-
-	_, err = config.Db.Exec(sqlStatement, roles.Role_Id, roles.TeamId)
-	if err != nil {
-		fmt.Println(2)
-		panic(err)
-	}
-
-	sqlStatement = ` UPDATE slh_teams SET "Role" = $1  WHERE ("TeamId") = $2`
-
-	_, err = config.Db.Exec(sqlStatement, roles.Role_Name, roles.TeamId)
-	if err != nil {
-		fmt.Println(3)
-		panic(err)
-	}
-
-	return roles, ErrorMessage{}
 }
