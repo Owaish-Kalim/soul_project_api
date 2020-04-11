@@ -18,8 +18,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/context"
 	"golang.org/x/crypto/bcrypt"
-	
-	//  "github.com/gemcook/pagination-go"
+
 )
 
 func BuildResponse(response *Response, team Team) Response {
