@@ -73,6 +73,7 @@ func CreatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 }
 
 func UpdatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner) {
+	fmt.Println("91919")
 	w.Header().Set("Content-Type", "application/json")
 	r.ParseForm()
 	var partner = Partner{}

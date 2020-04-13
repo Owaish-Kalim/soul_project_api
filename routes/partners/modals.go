@@ -12,12 +12,12 @@ type Partner struct {
 	Partner_Id       int    `json:"partner_id"`
 	Partner_Name     string `json:"partner_name"`
 	Partner_Email    string `json:"partner_email"`
-	Partner_MobileNo int    `json:"partner_mobileno"`
+	Partner_MobileNo string `json:"partner_mobileno"`
 	Partner_Address  string `json:"partner_address"`
-	Pincode          int    `json:"pincode"`
+	Pincode          string `json:"pincode"`
 	Latitude         string `json:"latitude"`
 	Longitude        string `"json:longitude"`
-	Rate             int    `"rate"`
+	Rate             string `"json:"rate,string"`
 	Commission_Type  string `"json:"commission_type"`
 	Onboard_Date     time.Time
 	UpdatedAt        time.Time
@@ -46,10 +46,10 @@ type ErrPartner struct {
 type UpResponse struct {
 	Partner_Name     string `json:"partner_name"`
 	Partner_Email    string `json:"partner_email"`
-	Partner_MobileNo int    `json:"partner_mobileno"`
+	Partner_MobileNo string `json:"partner_mobileno"`
 	Partner_Address  string `json:"partner_address"`
-	Pincode          int    `json:"pincode"`
-	Rate             int    `json:"rate"`
+	Pincode          string `json:"pincode"`
+	Rate             string `json:"rate"`
 	Commission_Type  string `"json:"commission_type"`
 	Updated_By       string `json:"updated_by"`
 }
@@ -75,7 +75,7 @@ func CheckEmpty(partner Partner, res *ErrPartner) {
 		res.Message = "Error"
 	}
 
-	if partner.Partner_MobileNo == 0 {
+	if partner.Partner_MobileNo == "" {
 		res.Partner_MobileNo = "Partner Mobile No cannot be empty."
 		res.Message = "Error"
 	}
@@ -85,12 +85,12 @@ func CheckEmpty(partner Partner, res *ErrPartner) {
 		res.Message = "Error"
 	}
 
-	if partner.Pincode == 0 {
+	if partner.Pincode == "" {
 		res.Pincode = "Pincode cannot be empty."
 		res.Message = "Error"
 	}
 
-	if partner.Rate == 0 {
+	if partner.Rate == "" {
 		res.Rate = "Per Visit Price cannot be empty."
 		res.Message = "Error"
 	}

@@ -35,6 +35,7 @@ func ValidateTokenMiddleware(next http.HandlerFunc) http.HandlerFunc {
 				//	fmt.Println("asf")
 				if error != nil {
 					json.NewEncoder(w).Encode(ErrorMsg{Message: error.Error()})
+					fmt.Println(ErrorMsg{Message: error.Error()})
 					return
 				}
 				//	fmt.Println("HEHR")

@@ -8,9 +8,10 @@ import (
 	"soul_api/routes/customers"
 	"soul_api/routes/partners"
 	"soul_api/routes/pendingOrders"
+
+	"soul_api/routes/souls_settings"
 	"soul_api/routes/team"
 	"soul_api/routes/teamHasRole"
-
 	"soul_api/routes/transactions"
 
 	"soul_api/routes/users"
@@ -32,9 +33,9 @@ func main() {
 	r.HandleFunc("/team/login", team.Login).Methods("POST")
 	r.HandleFunc("/team/list", middleware.ValidateTokenMiddleware(team.List)).Methods("GET")
 	r.HandleFunc("/team/add-member", team.Create).Methods("POST")
-	r.HandleFunc("/team/update-member", middleware.ValidateTokenMiddleware(team.Update)).Methods("PUT")
+	r.HandleFunc("/team/update/profile", middleware.ValidateTokenMiddleware(team.Update)).Methods("PUT")
 	r.HandleFunc("/team/update-member/password", middleware.ValidateTokenMiddleware(team.UpdatePassword)).Methods("PUT")
-	r.HandleFunc("/team/update-team-member", middleware.ValidateTokenMiddleware(team.UpdateMember)).Methods("PUT")
+	r.HandleFunc("/team/update/team-member", middleware.ValidateTokenMiddleware(team.UpdateMember)).Methods("PUT")
 	r.HandleFunc("/team/view-member", middleware.ValidateTokenMiddleware(team.View)).Methods("GET")
 	r.HandleFunc("/team/update-status", middleware.ValidateTokenMiddleware(team.UpdateStatus)).Methods("POST")
 	r.HandleFunc("/team/logout", middleware.ValidateTokenMiddleware(team.Logout)).Methods("GET")
@@ -59,7 +60,9 @@ func main() {
 
 	r.HandleFunc("/partner/register", middleware.ValidateTokenMiddleware(partners.Create)).Methods("POST")
 	r.HandleFunc("/partner/update", middleware.ValidateTokenMiddleware(partners.Update)).Methods("PUT")
-	r.HandleFunc("/partner/List", middleware.ValidateTokenMiddleware(partners.List)).Methods("GET")
+	r.HandleFunc("/partner/list", middleware.ValidateTokenMiddleware(partners.List)).Methods("GET")
+
+	r.HandleFunc("/souls/settings", middleware.ValidateTokenMiddleware(souls_settings.Create)).Methods("POST")
 
 	fmt.Println("Starting Server")
 	log.Fatal(http.ListenAndServe(":8000", handler))

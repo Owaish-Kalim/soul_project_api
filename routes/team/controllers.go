@@ -35,7 +35,17 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 		return response, res
 	}
 
-	team.Joining_Date = time.Now().Local()
+	team_role := TeamRole{}
+	sqlStatement := `SELECT ("Role_Id") FROM slh_roles WHERE ("Role_Name" = $1);`
+	row := config.Db.QueryRow(sqlStatement, team.Role)
+	err = row.Scan(&team_role.Team_Has_Role_Id)
+	if err != nil {
+		w.WriteHeader(http.StatusPreconditionFailed)
+		res.Message = "Role_Name does not exist"
+		return response, res
+	}
+	// dt := time.Now()
+	// fmt.Println(dt.Format("02-01-2006"))
 	team.CreatedAt = time.Now().Local()
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(team.Password), 8)
 
@@ -45,7 +55,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 		return response, res
 	}
 
-	sqlStatement := `
+	sqlStatement = `
 	INSERT INTO slh_teams ("FirstName","LastName","Email", "Address", "JoiningDate", "CreatedAt", "Password", "MobileNo", "Status", "Role")
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	RETURNING ("TeamId")`
@@ -53,7 +63,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	team.TeamId = 0
 	err = config.Db.QueryRow(sqlStatement, team.FirstName, team.LastName, team.Email, team.Address, team.Joining_Date, team.CreatedAt, string(hashedPassword), team.MobileNo, team.Status, team.Role).Scan(&team.TeamId)
 	if err != nil {
-		panic(err)
+		// panic(err)
 		w.WriteHeader(http.StatusPreconditionFailed)
 		res.Message = "Email already registered"
 		return response, res
@@ -61,15 +71,15 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	BuildResponse(&response, team)
 	res.Message = ""
 
-	team_role := TeamRole{}
 	team_role.UpdatedAt = time.Now().Local()
 
 	sqlStatement = `SELECT ("Role_Id") FROM slh_roles WHERE ("Role_Name" = $1);`
-	row := config.Db.QueryRow(sqlStatement, team.Role)
+	row = config.Db.QueryRow(sqlStatement, team.Role)
 	err = row.Scan(&team_role.Team_Has_Role_Id)
 	if err != nil {
-		fmt.Println(1)
-		panic(err)
+		w.WriteHeader(http.StatusPreconditionFailed)
+		res.Message = "Role_Name does not exist"
+		return response, res
 	}
 
 	sqlStatement = `
@@ -78,11 +88,8 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 
 	_, err = config.Db.Exec(sqlStatement, team.TeamId, team.FirstName, team.LastName, team_role.Team_Has_Role_Id, team.CreatedAt, team.Status, team_role.UpdatedAt)
 	if err != nil {
-		fmt.Println(2)
-		panic(err)
-		w.WriteHeader(http.StatusPreconditionFailed)
-		res.Message = "Email already registered"
-		return response, res
+		w.WriteHeader(http.StatusInternalServerError)
+		return response, Shared.ErrorMsg{Message: "Internal Server Error."}
 	}
 
 	return response, res
@@ -166,12 +173,12 @@ func UpdateTeam(w http.ResponseWriter, r *http.Request) (UpdateResponse, Shared.
 
 	userEmail := context.Get(r, middleware.Decoded)
 
-	sqlStatement := ` UPDATE slh_teams SET "FirstName" = $1, "LastName" = $2, "Email" = $3, "Password" = $4, "Address" = $5, "MobileNo" = $6, "Status" = $7 WHERE ("Email") = $8`
+	sqlStatement := ` UPDATE slh_teams SET "FirstName" = $1, "LastName" = $2, "Address" = $3, "MobileNo" = $4, "Status" = $5 WHERE ("Email") = $6`
 
-	_, err = config.Db.Exec(sqlStatement, team.FirstName, team.LastName, team.Email, team.Password, team.Address, team.MobileNo, team.Status, userEmail)
+	_, err = config.Db.Exec(sqlStatement, team.FirstName, team.LastName, team.Address, team.MobileNo, team.Status, userEmail)
 	if err != nil {
-		return response, Shared.ErrorMsg{Message: "Email already registered"}
-		//panic(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return response, Shared.ErrorMsg{Message: "Internal Server Error."}
 	}
 	BuildUpdateResponse(&response, team)
 	return response, Shared.ErrorMsg{Message: ""}
@@ -238,23 +245,10 @@ func ViewTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorMsg
 	var team = Response{}
 	userEmail := context.Get(r, middleware.Decoded)
 	fmt.Println(userEmail)
-	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams WHERE ("Email")=$1;`
+	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("Role"),("JoiningDate") FROM slh_teams WHERE ("Email")=$1;`
 	row := config.Db.QueryRow(sqlStatement, userEmail)
 
-	row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Joining_Date)
-	fmt.Println(team)
-	return team, Shared.ErrorMsg{Message: ""}
-}
-
-func ViewTeamMember(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorMsg) {
-	r.ParseForm()
-	var team = Response{}
-	userEmail := context.Get(r, middleware.Decoded)
-	fmt.Println(userEmail)
-	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams WHERE ("Email")=$1;`
-	row := config.Db.QueryRow(sqlStatement, userEmail)
-
-	row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Joining_Date)
+	row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Role, &team.Joining_Date)
 	fmt.Println(team)
 	return team, Shared.ErrorMsg{Message: ""}
 }
@@ -298,7 +292,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	offset := q.Limit * q.Page
 
 	var teams []Response
-	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("JoiningDate") FROM slh_teams 
+	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("Role"),("JoiningDate") FROM slh_teams 
 	WHERE ("TeamId")::text ilike  ''|| $1 ||'%'
 	OR ("FirstName") ILIKE ''|| $2 ||'%' 
 	AND ("LastName") ILIKE '' || $3 || '%' 
@@ -318,7 +312,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	for rows.Next() {
 		var team = Response{}
 		// fmt.Println(100)
-		rows.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Joining_Date)
+		rows.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Role, &team.Joining_Date)
 		teams = append(teams, team)
 		// cnt = cnt + 1
 	}

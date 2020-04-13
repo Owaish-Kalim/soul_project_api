@@ -17,7 +17,7 @@ type Team struct {
 	Status       string `json:"status"`
 	Role         string `json:"role"`
 	Gender       string `json:"gender"`
-	Joining_Date time.Time
+	Joining_Date string `json:"joining_date"`
 	CreatedAt    time.Time
 }
 
@@ -30,7 +30,7 @@ type Response struct {
 	Role         string `json:"role"`
 	MobileNo     string `json:"mobileno"`
 	Status       string `json:"status"`
-	Joining_Date time.Time
+	Joining_Date string `json:"joining_date"`
 }
 
 type UpdateResponse struct {
@@ -41,7 +41,7 @@ type UpdateResponse struct {
 	// Role         string `json:"role"`
 	MobileNo     string `json:"mobileno"`
 	Status       string `json:"status"`
-	Joining_Date time.Time
+	Joining_Date string `json:"joining_date"`
 }
 
 type LoginResponse struct {
@@ -54,7 +54,7 @@ type LoginResponse struct {
 	MobileNo     string `json:"mobileno"`
 	Status       string `json:"status"`
 	Token        string `json:"token"`
-	Joining_Date time.Time
+	Joining_Date string `json:"joining_date"`
 }
 
 type StatusResponse struct {
@@ -140,15 +140,15 @@ func CheckEmpty(team Team, res *Shared.ErrorMsg) {
 		res.Message = "Error"
 	}
 
-	if team.Email == "" {
-		res.Email = "Email cannot be empty."
-		res.Message = "Error"
-	}
+	// if team.Email == "" {
+	// 	res.Email = "Email cannot be empty."
+	// 	res.Message = "Error"
+	// }
 
-	if team.Password == "" {
-		res.Password = "Password cannot be empty."
-		res.Message = "Error"
-	}
+	// if team.Password == "" {
+	// 	res.Password = "Password cannot be empty."
+	// 	res.Message = "Error"
+	// }
 
 	if team.Address == "" {
 		res.Address = "Address cannot be empty."

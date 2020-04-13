@@ -55,13 +55,14 @@ func AddCustomer(w http.ResponseWriter, r *http.Request) (Customer, ErrorMsg) {
 		customer.Customer_Gender, customer.Customer_Mobile_No, customer.CreatedAt, customer.Last_Access_Time, customer.Status,
 		customer.Registered_Source).Scan(&customer.Customer_Id)
 	if err != nil {
-
+		panic(err)
 		sqlStatement := ` UPDATE slh_customers SET "Customer_Name" = $1, "Customer_Email" = $2, "Customer_Address" = $3, "Pincode" = $4,
 		 "Customer_Gender" = $5, "Last_Access_Time" = $6 WHERE ("Customer_Mobile_No") = $7`
 
 		_, err = config.Db.Exec(sqlStatement, customer.Customer_Name, customer.Customer_Email, customer.Customer_Address, customer.Pincode,
 			customer.Customer_Gender, customer.Last_Access_Time, customer.Customer_Mobile_No)
 		if err != nil {
+			fmt.Println(32)
 			w.WriteHeader(http.StatusInternalServerError)
 			return customer, ErrorMsg{Message: "Internal Server Error"}
 		}
@@ -70,7 +71,7 @@ func AddCustomer(w http.ResponseWriter, r *http.Request) (Customer, ErrorMsg) {
 		row := config.Db.QueryRow(sqlStatements, customer.Customer_Mobile_No)
 		err = row.Scan(&customer.Customer_Id, &customer.Customer_Souls_Id, &customer.CreatedAt)
 		if err != nil {
-
+			fmt.Println(32)
 			w.WriteHeader(http.StatusInternalServerError)
 			return customer, ErrorMsg{Message: "Internal Server Error"}
 		}
@@ -182,13 +183,6 @@ func ListCustomer(w http.ResponseWriter, r *http.Request) ([]Customer, ErrorMess
 	q.Customer_Souls_Id = r.Form.Get("customer_souls_id")
 	q.Customer_Name = r.Form.Get("customer_name")
 	q.Customer_Order_Id = r.Form.Get("customer_id")
-	// q.Customer_Mobile_No = r.Form.Get("mobile_no")
-	// q.Status = r.Form.Get("status")
-	// q. = r.Form.Get("customer_souls_id")
-	// q.Customer_Name = r.Form.Get("name")
-	// q.Customer_Order_Id = r.Form.Get("order_id")
-	// q.Customer_Mobile_No = r.Form.Get("mobile_no")
-	// q.Status = r.Form.Get("status")
 	q.Customer_Email = r.Form.Get("customer_email")
 	q.Customer_Gender = r.Form.Get("customer_gender")
 
