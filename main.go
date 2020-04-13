@@ -9,7 +9,7 @@ import (
 	"soul_api/routes/partners"
 	"soul_api/routes/pendingOrders"
 
-	"soul_api/routes/souls_settings"
+	"soul_api/routes/comm_template"
 	"soul_api/routes/team"
 	"soul_api/routes/teamHasRole"
 	"soul_api/routes/transactions"
@@ -18,6 +18,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
+
+
 )
 
 func main() {
@@ -62,7 +64,7 @@ func main() {
 	r.HandleFunc("/partner/update", middleware.ValidateTokenMiddleware(partners.Update)).Methods("PUT")
 	r.HandleFunc("/partner/list", middleware.ValidateTokenMiddleware(partners.List)).Methods("GET")
 
-	r.HandleFunc("/souls/settings", middleware.ValidateTokenMiddleware(souls_settings.Create)).Methods("POST")
+	r.HandleFunc("/souls/settings", middleware.ValidateTokenMiddleware(comm_template.Create)).Methods("POST")
 
 	fmt.Println("Starting Server")
 	log.Fatal(http.ListenAndServe(":8000", handler))

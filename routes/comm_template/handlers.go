@@ -1,4 +1,4 @@
-package souls_settings
+package comm_template
 
 import (
 	"encoding/json"
