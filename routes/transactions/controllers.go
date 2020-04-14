@@ -48,11 +48,11 @@ func CustomerTransaction(w http.ResponseWriter, r *http.Request) (CustomerTran, 
 		w.WriteHeader(http.StatusNotFound)
 		return CustomerTran{}, ErorMesg{Message: "Unauthorised User"}
 	}
-	fmt.Println(12345678)
+	// fmt.Println(12345678)
 	sqlStatement := `
 	INSERT INTO slh_transactions ("Customer_Order_Id","Customer_Id", "Customer_Souls_Id", "Number_Of_Therapist_Required", "Therapist_Gender", 
 	"Massage_For","Slot_Time", "Slot_Date", "Customer_Address", "Pincode", "Latitude", "Longitude", "Merchant_Transaction_Id", 
-	"Massage_Duration", "CreatedAt", "Customer_Name", "Total_Order_Amount", "Payment_Gateway_Id", "Payment_Gateway_Mode", "Transaction_Mode", "Bank_Type") 
+	"Massage_Duration", "CreatedAt", "Customer_Name", "Total_Order_Amount", "Payment_Gateway_Id", "Payment_Gateway_Mode", "Transaction_Mode", "Bank_Type")  
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`
 
 	_, err = config.Db.Exec(sqlStatement, customer.Customer_Order_Id, customer.Customer_Id, customer.Customer_Souls_Id, customer.Number_Of_Therapist, customer.Therapist_Gender,
@@ -138,14 +138,6 @@ func ListCustomerTransaction(w http.ResponseWriter, r *http.Request) ([]Customer
 	q.Transaction_Mode = r.Form.Get("transaction_mode")
 	q.Bank_Type = r.Form.Get("bank_type")
 
-	// q.Customer_Mobile_No = r.Form.Get("mobile_no")
-	// q.Status = r.Form.Get("status")
-	// q. = r.Form.Get("customer_souls_id")
-	// q.Customer_Name = r.Form.Get("name")
-	// q.Customer_Order_Id = r.Form.Get("order_id")
-	// q.Customer_Mobile_No = r.Form.Get("mobile_no")
-	// q.Status = r.Form.Get("status")
-	// fmt.Println(q)
 	offset := q.Limit * q.Page
 	var customers []CustomerTran
 	sqlStatement := `SELECT ("Customer_Order_Id"), ("Customer_Souls_Id"),("Customer_Name"), ("Customer_Id"),("Pincode"),("Customer_Address"),

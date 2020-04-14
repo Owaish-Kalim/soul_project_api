@@ -1,95 +1,88 @@
 package custmr_assign_partner
 
 import (
-	"encoding/json"
-	"net/http"
-	"soul_api/config"
-	Shared "soul_api/routes"
-	"time"
+	"math"
 )
 
-func CheckEmpty(customerpartner CustomerPartner, res *Shared.ErrorMesg) {
-
-	if customerpartner.Commission_Amount == 0 {
-		res.Commission_Amount = "Commission Amount cannot be empty."
-		res.Message = "Error"
-	}
-
-	if customerpartner.Created_By == "" {
-		res.Created_By = "Created By   cannot be empty."
-		res.Message = "Error"
-	}
-
-	if customerpartner.Updated_By == "" {
-		res.Updated_By = "Updated By  cannot be empty."
-		res.Message = "Error"
-	}
-
-	if customerpartner.Customer_Souls_Id == "" {
-		res.Customer_Souls_Id = "Customer Souls Id cannot be empty."
-		res.Message = "Error"
-	}
-
-	if customerpartner.Status == "" {
-		res.Status = "Status cannot be empty."
-		res.Message = "Error"
-	}
-
+func hsin(theta float64) float64 {
+	return math.Pow(math.Sin(theta/2), 2)
 }
 
-func CreateCustomerPartner(w http.ResponseWriter, r *http.Request) (CustomerPartner, Shared.ErrorMesg) {
-	r.ParseForm()
-	customerpartner := CustomerPartner{}
-	//response := Response{}
-	err := json.NewDecoder(r.Body).Decode(&customerpartner)
-	if err != nil {
-		panic(err)
-	}
+// func Distance(lat1, lon1, lat2, lon2 float64) float64 {
 
-	var res Shared.ErrorMesg
-	res.Message = ""
-	CheckEmpty(customerpartner, &res)
-	if res.Message != "" {
-		w.WriteHeader(http.StatusBadRequest)
-		return customerpartner, res
-	}
+// 	var la1, lo1, la2, lo2, r float64
+// 	la1 = lat1 * math.Pi / 180
+// 	lo1 = lon1 * math.Pi / 180
+// 	la2 = lat2 * math.Pi / 180
+// 	lo2 = lon2 * math.Pi / 180
 
-	customerpartner.Slot_Date = time.Now().Local()
-	customerpartner.CreatedAt = time.Now().Local()
-	customerpartner.Slot_Time = time.Now().Local()
+// 	r = 6378100
+// 	h := hsin(la2-la1) + math.Cos(la1)*math.Cos(la2)*hsin(lo2-lo1)
 
-	sqlStatements := `SELECT ("Customer_Name"),("Customer_Id"),("Merchant_Transaction_Id") 
-	FROM slh_customers_pending_orders WHERE ("Customer_Souls_Id")=$1;`
-	row := config.Db.QueryRow(sqlStatements, customerpartner.Merchant_Transaction_Id)
-	err = row.Scan(&customerpartner.Customer_Name, &customerpartner.Customer_Id, &customerpartner.Merchant_Transaction_Id)
-	//fmt.Println(customer.Customer_Id)
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		res.Message = "Unauthorized User"
-		return customerpartner, res
-	}
+// 	return 2 * r * math.Asin(math.Sqrt(h))
+// }
 
-	sqlStatement := `
-	INSERT INTO slh_assign_customer_with_partner ("Customer_Souls_Id ","Customer_Name", "Customer_Id",
-	"Merchant_Transaction_Id","Status","Commission_Amount", 
-	"Created_By","Updated_By","CreatedAt", "Slot_Date", "Slot_Time")
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
+// func CreateCustomerPartner(w http.ResponseWriter, r *http.Request) CustomerPartner {
+// 	r.ParseForm()
+// 	cust_part := CustomerPartner{}
+// 	err := json.NewDecoder(r.Body).Decode(&cust_part)
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	//team.TeamId = 0
-	_, err = config.Db.Exec(sqlStatement, customerpartner.Customer_Souls_Id, customerpartner.Customer_Name,
-		customerpartner.Customer_Id, customerpartner.Merchant_Transaction_Id, customerpartner.Status,
-		customerpartner.Commission_Amount, customerpartner.Created_By, customerpartner.Updated_By,
-		customerpartner.CreatedAt, customerpartner.Slot_Date, customerpartner.Slot_Time)
-	if err != nil {
-		panic(err)
-		w.WriteHeader(http.StatusPreconditionFailed)
-		res.Message = "Internal Server Error"
-		return customerpartner, res
-	}
-	//BuildResponse(&response, team)
-	res.Message = ""
-	return customerpartner, res
-}
+// 	//Select Partner
+// 	temp := Temp{}
+// 	sqlStatement := `SELECT ("Latitude"), ("Longitude") FROM slh_customers_pending_orders  WHERE ("Merchant_Transaction_Id")=$1;`
+// 	row := config.Db.QueryRow(sqlStatement, cust_part.Merchant_Transaction_Id)
+// 	err = row.Scan(&temp.Cust_Lat, &temp.Cust_Long)
+// 	if err != nil {
+// 		fmt.Print("asfafs")
+// 		panic(err)
+// 	}
+// 	Lat1, _ := strconv.ParseFloat(temp.Cust_Lat, 8)
+// 	Long1, _ := strconv.ParseFloat(temp.Cust_Long, 8)
+
+// 	sqlStatement = `SELECT ("Latitude"), ("Longitude"), ("Partner_Souls_Id") FROM slh_partners  WHERE 1=1 ;`
+// 	rows, err := config.Db.Query(sqlStatement)
+// 	if err != nil {
+// 		fmt.Print("asfafs")
+// 		panic(err)
+// 	}
+
+// 	// MinDist := math.MaxFloat64
+// 	var partners []Partner
+
+// 	for rows.Next() {
+// 		temp := Temp{}
+// 		rows.Scan(&temp.Part_Lat, &temp.Part_Long, &temp.Part_Souls_Id)
+// 		Lat2, _ := strconv.ParseFloat(temp.Part_Lat, 8)
+// 		Long2, _ := strconv.ParseFloat(temp.Part_Long, 8)
+
+// 		dist := Distance(Lat1, Long1, Lat2, Long2)
+
+// 		partner := Partner{}
+// 		partner.Souls_Id = temp.Part_Souls_Id
+// 		partner.Dis = dist
+// 		partners = append(partners, partner)
+// 	}
+
+// 	sort.SliceStable(partners, func(i, j int) bool {
+// 		return partners[i].Dis < partners[j].Dis
+// 	})
+
+// 	sqlStatement = `SELECT ("Partner_Name"), ("Partner_Mobile_No") FROM slh_partners  WHERE ("Partner_Souls_Id")=$1; `
+// 	row = config.Db.QueryRow(sqlStatement, cust_part.Partner_Souls_Id)
+// 	err = row.Scan(&cust_part.Partner_Name, &cust_part.Partner_Mobile_No)
+// 	if err != nil {
+// 		fmt.Print("asfafs")
+// 		panic(err)
+// 	}
+
+// 	cust_part.Slot_Date = "14-04-2020"
+// 	cust_part.Slot_Time = "1 PM"
+// 	cust_part.Status = "Pending"
+
+// }
 
 // func UpdateCustomerPartner(w http.ResponseWriter, r *http.Request) (CustomerPartner, Shared.ErrorMsg) {
 // 	w.Header().Set("Content-Type", "application/json")

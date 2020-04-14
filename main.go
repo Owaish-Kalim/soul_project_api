@@ -18,8 +18,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
-
-
 )
 
 func main() {
@@ -65,6 +63,8 @@ func main() {
 	r.HandleFunc("/partner/list", middleware.ValidateTokenMiddleware(partners.List)).Methods("GET")
 
 	r.HandleFunc("/souls/settings", middleware.ValidateTokenMiddleware(comm_template.Create)).Methods("POST")
+
+	// r.HandleFunc("customers/assign/partners", middleware.ValidateTokenMiddleware(custmr_assign_partner.Create)).Methods("POST")
 
 	fmt.Println("Starting Server")
 	log.Fatal(http.ListenAndServe(":8000", handler))
