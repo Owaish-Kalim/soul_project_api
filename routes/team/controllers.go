@@ -31,15 +31,16 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	sqlStatement := `SELECT ("Role") FROM slh_teams WHERE ("Email" = $1);`
 	row := config.Db.QueryRow(sqlStatement, userEmail)
 	err := row.Scan(&role)
+	fmt.Println(role)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		res.Message = "Internal Server Error."
+		res.Message = err.Error()
 		return Response{}, res
 	}
 
 	if role != "Admin" {
 		w.WriteHeader(http.StatusPreconditionFailed)
-		res.Message = "Unauthorised User"
+		res.Message = err.Error()
 		return Response{}, res
 	}
 
@@ -69,7 +70,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	err = row.Scan(&team_role.Team_Has_Role_Id)
 	if err != nil {
 		w.WriteHeader(http.StatusPreconditionFailed)
-		res.Message = "Role_Name does not exist"
+		res.Message = err.Error()
 		return response, res
 	}
 
@@ -79,7 +80,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		res.Message = "Internal Server Error."
+		res.Message = err.Error()
 		return response, res
 	}
 
@@ -105,7 +106,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	err = row.Scan(&team_role.Team_Has_Role_Id)
 	if err != nil {
 		w.WriteHeader(http.StatusPreconditionFailed)
-		res.Message = "Role_Name does not exist"
+		res.Message = err.Error()
 		return response, res
 	}
 
@@ -116,7 +117,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	_, err = config.Db.Exec(sqlStatement, team.TeamId, team.FirstName, team.LastName, team_role.Team_Has_Role_Id, team.CreatedAt, team.Status, team_role.UpdatedAt)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return response, Shared.ErrorMsg{Message: "Internal Server Error."}
+		return response, Shared.ErrorMsg{Message: err.Error()}
 	}
 
 	return response, res
@@ -134,7 +135,7 @@ func LoginTeam(w http.ResponseWriter, r *http.Request) (LoginResponse, Shared.Er
 	if client.Email == "" ||
 		client.Password == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		return response, Shared.ErrorMsg{Message: "Fields cannot be empty."}
+		return response, Shared.ErrorMsg{Message: err.Error()}
 	}
 
 	sqlStatement := `SELECT ("TeamId"), ("FirstName"), ("LastName"), ("Email"), ("Password"), ("Address"), ("MobileNo"), ("Status"), 
@@ -147,12 +148,12 @@ func LoginTeam(w http.ResponseWriter, r *http.Request) (LoginResponse, Shared.Er
 	switch err {
 	case sql.ErrNoRows:
 		w.WriteHeader(http.StatusNotFound)
-		return response, Shared.ErrorMsg{Message: "Email or Password Incorrect."}
+		return response, Shared.ErrorMsg{Message: err.Error()}
 	case nil:
 		eror := bcrypt.CompareHashAndPassword([]byte(team.Password), []byte(client.Password))
 		if eror != nil {
 			w.WriteHeader(http.StatusForbidden)
-			return response, Shared.ErrorMsg{Message: "Email or Password Incorrect."}
+			return response, Shared.ErrorMsg{Message: err.Error()}
 		}
 
 		expirationTime := time.Now().Add(15000 * time.Minute)
@@ -167,12 +168,12 @@ func LoginTeam(w http.ResponseWriter, r *http.Request) (LoginResponse, Shared.Er
 		tokenString, err := token.SignedString(Shared.JwtKey)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return response, Shared.ErrorMsg{Message: "Internal Server Error."}
+			return response, Shared.ErrorMsg{Message: err.Error()}
 		}
 		sqlStatement := `UPDATE slh_teams SET "Token"=$1 WHERE "Email"=$2`
 		_, err = config.Db.Exec(sqlStatement, tokenString, team.Email)
 		if err != nil {
-			return response, Shared.ErrorMsg{Message: "Internal Server Error."}
+			return response, Shared.ErrorMsg{Message: err.Error()}
 		}
 		team.Token = tokenString
 		BuildLoginResponse(&response, team)
@@ -208,7 +209,7 @@ func UpdateTeam(w http.ResponseWriter, r *http.Request) (UpdateResponse, Shared.
 	_, err = config.Db.Exec(sqlStatement, team.FirstName, team.LastName, team.Address, team.MobileNo, team.Status, team.Gender, userEmail)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return response, Shared.ErrorMsg{Message: "Internal Server Error."}
+		return response, Shared.ErrorMsg{Message: err.Error()}
 	}
 	BuildUpdateResponse(&response, team)
 	return response, Shared.ErrorMsg{Message: ""}
@@ -228,13 +229,13 @@ func UpdateMemberDetails(w http.ResponseWriter, r *http.Request) (UpdateResponse
 	err := row.Scan(&role)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		res.Message = "Internal Server Error."
+		res.Message = err.Error()
 		return UpdateResponse{}, res
 	}
 
 	if role != "Admin" {
 		w.WriteHeader(http.StatusPreconditionFailed)
-		res.Message = "Unauthorised User"
+		res.Message = err.Error()
 		return UpdateResponse{}, res
 	}
 
@@ -279,14 +280,14 @@ func UpdateTeamStatus(w http.ResponseWriter, r *http.Request) (StatusResponse, S
 
 	if member.Email == "" || member.Status == "" {
 		w.WriteHeader(http.StatusPreconditionFailed)
-		return member, Shared.ErrorMsg{Message: "BLANK FIELDS"}
+		return member, Shared.ErrorMsg{Message: err.Error()}
 	}
 
 	userEmail := context.Get(r, middleware.Decoded)
 	sqlStatement := ` UPDATE slh_teams SET "Status" = $1 WHERE ("Email") = $2`
 	_, err = config.Db.Exec(sqlStatement, member.Status, userEmail)
 	if err != nil {
-		return member, Shared.ErrorMsg{Message: "Internal Server Error."}
+		return member, Shared.ErrorMsg{Message: err.Error()}
 	}
 	return member, Shared.ErrorMsg{Message: ""}
 }
@@ -317,9 +318,10 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	sqlStatement := `SELECT ("Role") FROM slh_teams WHERE ("Email" = $1);`
 	row := config.Db.QueryRow(sqlStatement, userEmail)
 	err := row.Scan(&role)
+	fmt.Println(role)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		res.Message = "Internal Server Error"
+		res.Message = err.Error()
 		return []Response{}, res
 	}
 
@@ -334,7 +336,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	if limit != "" {
 		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			res.Message = "Internal Server Error"
+			res.Message = err.Error()
 			return []Response{}, res
 		}
 	} else {
@@ -344,7 +346,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	if page != "" {
 		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			res.Message = "Internal Server Error"
+			res.Message = err.Error()
 			return []Response{}, res
 		}
 		q.Page = q.Page - 1
@@ -355,7 +357,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	if teamid != "" {
 		if err := Shared.ParseInt(r.Form.Get("teamid"), &q.TeamId); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			res.Message = "Internal Server Error"
+			res.Message = err.Error()
 			return []Response{}, res
 		}
 	}
@@ -384,7 +386,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	if err != nil {
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return teams, Shared.ErrorMessage{Message: "Internal Server Error."}
+		return teams, Shared.ErrorMessage{Message: err.Error()}
 	}
 
 	// fmt.Println(len(rows))
@@ -405,7 +407,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	if err != nil {
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return teams, Shared.ErrorMessage{Message: "Internal Server Error."}
+		return teams, Shared.ErrorMessage{Message: err.Error()}
 	}
 
 	w.Header().Set("Total-Count", strconv.Itoa(cnt))
@@ -433,7 +435,7 @@ func UpdateMemberPassword(w http.ResponseWriter, r *http.Request) (Team, Shared.
 	err := row.Scan(&role)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		res.Message = "Internal Server Error"
+		res.Message = err.Error()
 		return Team{}, res
 	}
 
@@ -451,7 +453,7 @@ func UpdateMemberPassword(w http.ResponseWriter, r *http.Request) (Team, Shared.
 
 	if team.Password == "" {
 		w.WriteHeader(http.StatusPreconditionFailed)
-		return team, Shared.ErrorMessage{Message: "BLANK FIELDS"}
+		return team, Shared.ErrorMessage{Message: err.Error()}
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(team.Password), 8)
@@ -464,7 +466,7 @@ func UpdateMemberPassword(w http.ResponseWriter, r *http.Request) (Team, Shared.
 		panic(err)
 	}
 	w.WriteHeader(http.StatusOK)
-	return team, Shared.ErrorMessage{Message: "Password Changed"}
+	return team, Shared.ErrorMessage{Message: ""}
 }
 
 func TeamLogout(w http.ResponseWriter, r *http.Request) Shared.ErrorMessage {
@@ -475,7 +477,7 @@ func TeamLogout(w http.ResponseWriter, r *http.Request) Shared.ErrorMessage {
 	sqlStatement := `UPDATE slh_teams SET "Token"=$1 WHERE "Email"=$2`
 	_, err := config.Db.Exec(sqlStatement, "qw", userEmail)
 	if err != nil {
-		return Shared.ErrorMessage{Message: "Internal Server Error."}
+		return Shared.ErrorMessage{Message: err.Error()}
 	}
 	return Shared.ErrorMessage{Message: "Successfully Logout"}
 }
