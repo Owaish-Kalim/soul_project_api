@@ -2,7 +2,6 @@ package team
 
 import (
 	Shared "soul_api/routes"
-	"time"
 )
 
 type Team struct {
@@ -18,7 +17,7 @@ type Team struct {
 	Role         string `json:"role"`
 	Gender       string `json:"gender"`
 	Joining_Date string `json:"joining_date"`
-	CreatedAt    time.Time
+	CreatedAt    string `json:"created_at"`
 }
 
 type Response struct {
@@ -30,27 +29,30 @@ type Response struct {
 	Role         string `json:"role"`
 	MobileNo     string `json:"mobileno"`
 	Status       string `json:"status"`
+	Gender       string `json:"gender"`
 	Joining_Date string `json:"joining_date"`
 }
 
 type UpdateResponse struct {
-	FirstName string `json:"firstname"`
-	LastName  string `json:"lastname"`
-	Email     string `json:"email"`
-	Address   string `json:"address"`
-	// Role         string `json:"role"`
+	FirstName    string `json:"firstname"`
+	LastName     string `json:"lastname"`
+	Email        string `json:"email"`
+	Address      string `json:"address"`
+	Role         string `json:"role"`
 	MobileNo     string `json:"mobileno"`
 	Status       string `json:"status"`
 	Joining_Date string `json:"joining_date"`
+	Gender       string `json:"gender"`
 }
 
 type LoginResponse struct {
-	TeamId    int    `json:"teamid"`
-	FirstName string `json:"firstname"`
-	LastName  string `json:"lastname"`
-	Email     string `json:"email"`
-	Address   string `json:"address"`
-	// Role         string `json:"role"`
+	TeamId       int    `json:"teamid"`
+	FirstName    string `json:"firstname"`
+	LastName     string `json:"lastname"`
+	Email        string `json:"email"`
+	Address      string `json:"address"`
+	Role         string `json:"role"`
+	Gender       string `json:"gender"`
 	MobileNo     string `json:"mobileno"`
 	Status       string `json:"status"`
 	Token        string `json:"token"`
@@ -83,8 +85,8 @@ type TeamRole struct {
 	Team_Has_Role_Id int    `json:"team_has_role_id"`
 	TeamId           int    `json:"teamid"`
 	Status           string `json:"status"`
-	UpdatedAt        time.Time
-	CreatedAt        time.Time
+	UpdatedAt        string `json:"updated_at"`
+	CreatedAt        string `json:"created_at"`
 	FirstName        string `json:"first_name"`
 	LastName         string `json:"last_name"`
 }
@@ -99,6 +101,7 @@ func BuildResponse(response *Response, team Team) Response {
 	response.Status = team.Status
 	response.Role = team.Role
 	response.Joining_Date = team.Joining_Date
+	response.Gender = team.Gender
 	return *response
 }
 
@@ -109,8 +112,9 @@ func BuildUpdateResponse(response *UpdateResponse, team Team) UpdateResponse {
 	response.Address = team.Address
 	response.MobileNo = team.MobileNo
 	response.Status = team.Status
-	// response.Role = team.Role
+	response.Role = team.Role
 	response.Joining_Date = team.Joining_Date
+	response.Gender = team.Gender
 	return *response
 }
 
@@ -119,10 +123,11 @@ func BuildLoginResponse(response *LoginResponse, team Team) LoginResponse {
 	response.FirstName = team.FirstName
 	response.LastName = team.LastName
 	response.Email = team.Email
+	response.Gender = team.Gender
 	response.Address = team.Address
 	response.MobileNo = team.MobileNo
 	response.Status = team.Status
-	// response.Role = team.Role
+	response.Role = team.Role
 	response.Joining_Date = team.Joining_Date
 	response.Token = team.Token
 	return *response

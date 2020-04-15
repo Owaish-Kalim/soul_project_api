@@ -2,10 +2,32 @@ package Shared
 
 import (
 	// "time"
+	"fmt"
 	"strconv"
 
 	"github.com/dgrijalva/jwt-go"
 )
+
+func MobileVerify(Mobile string) string {
+	fmt.Println(len(Mobile))
+
+	if len(Mobile) > 10 || len(Mobile) < 10 {
+		return "MobileNo Should be 10 digits"
+	}
+
+	fmt.Println(1)
+
+	for i := 0; i < len(Mobile); i++ {
+		// fmt.Println(Mobile[i])
+		if Mobile[i] < '0' || Mobile[i] > '9' {
+			return "MobileNo. should be in Number Form"
+		}
+	}
+
+	fmt.Println(1)
+	return "correct"
+
+}
 
 var JwtKey = []byte("my_secret_key")
 

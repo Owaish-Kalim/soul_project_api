@@ -19,15 +19,35 @@ import (
 )
 
 func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorMsg) {
+
+	userEmail := context.Get(r, middleware.Decoded)
+
+	var role string
+	var res Shared.ErrorMsg
 	r.ParseForm()
-	team := Team{}
 	response := Response{}
-	err := json.NewDecoder(r.Body).Decode(&team)
+
+	sqlStatement := `SELECT ("Role") FROM slh_teams WHERE ("Email" = $1);`
+	row := config.Db.QueryRow(sqlStatement, userEmail)
+	err := row.Scan(&role)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		res.Message = "Internal Server Error."
+		return Response{}, res
+	}
+
+	if role != "Admin" {
+		w.WriteHeader(http.StatusPreconditionFailed)
+		res.Message = "Unauthorised User"
+		return Response{}, res
+	}
+
+	team := Team{}
+	err = json.NewDecoder(r.Body).Decode(&team)
 	if err != nil {
 		panic(err)
 	}
 
-	var res Shared.ErrorMsg
 	res.Message = ""
 	CheckEmpty(team, &res)
 	if res.Message != "" {
@@ -36,17 +56,17 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	}
 
 	team_role := TeamRole{}
-	sqlStatement := `SELECT ("Role_Id") FROM slh_roles WHERE ("Role_Name" = $1);`
-	row := config.Db.QueryRow(sqlStatement, team.Role)
+	sqlStatement = `SELECT ("Role_Id") FROM slh_roles WHERE ("Role_Name" = $1);`
+	row = config.Db.QueryRow(sqlStatement, team.Role)
 	err = row.Scan(&team_role.Team_Has_Role_Id)
 	if err != nil {
 		w.WriteHeader(http.StatusPreconditionFailed)
 		res.Message = "Role_Name does not exist"
 		return response, res
 	}
-	// dt := time.Now()
-	// fmt.Println(dt.Format("02-01-2006"))
-	team.CreatedAt = time.Now().Local()
+
+	curr_time := time.Now()
+	team.CreatedAt = curr_time.Format("02-01-2006 3:4:5 PM")
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(team.Password), 8)
 
 	if err != nil {
@@ -71,8 +91,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	BuildResponse(&response, team)
 	res.Message = ""
 
-	team_role.UpdatedAt = time.Now().Local()
-
+	team_role.UpdatedAt = curr_time.Format("02-01-2006 3:4:5 PM")
 	sqlStatement = `SELECT ("Role_Id") FROM slh_roles WHERE ("Role_Name" = $1);`
 	row = config.Db.QueryRow(sqlStatement, team.Role)
 	err = row.Scan(&team_role.Team_Has_Role_Id)
@@ -110,10 +129,12 @@ func LoginTeam(w http.ResponseWriter, r *http.Request) (LoginResponse, Shared.Er
 		return response, Shared.ErrorMsg{Message: "Fields cannot be empty."}
 	}
 
-	sqlStatement := `SELECT ("TeamId"), ("FirstName"), ("LastName"), ("Email"), ("Password"), ("Address"), ("MobileNo"), ("Status") FROM slh_teams WHERE ("Email")=$1;`
+	sqlStatement := `SELECT ("TeamId"), ("FirstName"), ("LastName"), ("Email"), ("Password"), ("Address"), ("MobileNo"), ("Status"), 
+	("Role") FROM slh_teams WHERE ("Email")=$1;`
 	team := Team{}
 	row := config.Db.QueryRow(sqlStatement, client.Email)
-	err = row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Password, &team.Address, &team.MobileNo, &team.Status)
+	err = row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Password, &team.Address, &team.MobileNo, &team.Status,
+		&team.Role)
 
 	switch err {
 	case sql.ErrNoRows:
@@ -173,9 +194,10 @@ func UpdateTeam(w http.ResponseWriter, r *http.Request) (UpdateResponse, Shared.
 
 	userEmail := context.Get(r, middleware.Decoded)
 
-	sqlStatement := ` UPDATE slh_teams SET "FirstName" = $1, "LastName" = $2, "Address" = $3, "MobileNo" = $4, "Status" = $5 WHERE ("Email") = $6`
+	sqlStatement := ` UPDATE slh_teams SET "FirstName" = $1, "LastName" = $2, "Address" = $3, "MobileNo" = $4, "Status" = $5, "Gender" = $6 
+	WHERE ("Email") = $7`
 
-	_, err = config.Db.Exec(sqlStatement, team.FirstName, team.LastName, team.Address, team.MobileNo, team.Status, userEmail)
+	_, err = config.Db.Exec(sqlStatement, team.FirstName, team.LastName, team.Address, team.MobileNo, team.Status, team.Gender, userEmail)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return response, Shared.ErrorMsg{Message: "Internal Server Error."}
@@ -187,14 +209,34 @@ func UpdateTeam(w http.ResponseWriter, r *http.Request) (UpdateResponse, Shared.
 func UpdateMemberDetails(w http.ResponseWriter, r *http.Request) (UpdateResponse, Shared.ErrorMsg) {
 	w.Header().Set("Content-Type", "application/json")
 	r.ParseForm()
+
+	userEmail := context.Get(r, middleware.Decoded)
+
+	var role string
+	var res Shared.ErrorMsg
+
+	sqlStatement := `SELECT ("Role") FROM slh_teams WHERE ("Email" = $1);`
+	row := config.Db.QueryRow(sqlStatement, userEmail)
+	err := row.Scan(&role)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		res.Message = "Internal Server Error."
+		return UpdateResponse{}, res
+	}
+
+	if role != "Admin" {
+		w.WriteHeader(http.StatusPreconditionFailed)
+		res.Message = "Unauthorised User"
+		return UpdateResponse{}, res
+	}
+
 	var team = Team{}
 	var response = UpdateResponse{}
-	err := json.NewDecoder(r.Body).Decode(&team)
+	err = json.NewDecoder(r.Body).Decode(&team)
 	if err != nil {
 		panic(err)
 	}
 
-	var res Shared.ErrorMsg
 	res.Message = ""
 	CheckEmptyUp(team, &res)
 	if res.Message != "" {
@@ -202,11 +244,12 @@ func UpdateMemberDetails(w http.ResponseWriter, r *http.Request) (UpdateResponse
 		return response, res
 	}
 
-	userEmail := team.Email
+	userEmail = team.Email
 	fmt.Println(userEmail)
-	sqlStatement := ` UPDATE slh_teams SET "FirstName" = $1, "LastName" = $2, "Address" = $3, "MobileNo" = $4, "Status" = $5 WHERE ("Email") = $6`
+	sqlStatement = ` UPDATE slh_teams SET "FirstName" = $1, "LastName" = $2, "Address" = $3, "MobileNo" = $4, "Status" = $5, "Gender" = $6 
+	WHERE ("Email") = $7`
 
-	_, err = config.Db.Exec(sqlStatement, team.FirstName, team.LastName, team.Address, team.MobileNo, team.Status, userEmail)
+	_, err = config.Db.Exec(sqlStatement, team.FirstName, team.LastName, team.Address, team.MobileNo, team.Status, team.Gender, userEmail)
 	if err != nil {
 		panic(err)
 	}
@@ -245,22 +288,45 @@ func ViewTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorMsg
 	var team = Response{}
 	userEmail := context.Get(r, middleware.Decoded)
 	fmt.Println(userEmail)
-	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("Role"),("JoiningDate") FROM slh_teams WHERE ("Email")=$1;`
+	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("Role"),("JoiningDate"), ("Gender")
+	FROM slh_teams WHERE ("Email")=$1;`
 	row := config.Db.QueryRow(sqlStatement, userEmail)
 
-	row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Role, &team.Joining_Date)
-	fmt.Println(team)
+	row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Role, &team.Joining_Date,
+		&team.Gender)
+
 	return team, Shared.ErrorMsg{Message: ""}
 }
 
-func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorMsg) {
+func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorMessage) {
+
+	userEmail := context.Get(r, middleware.Decoded)
+
+	var role string
+	var res Shared.ErrorMessage
 	r.ParseForm()
+
+	sqlStatement := `SELECT ("Role") FROM slh_teams WHERE ("Email" = $1);`
+	row := config.Db.QueryRow(sqlStatement, userEmail)
+	err := row.Scan(&role)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		res.Message = "Internal Server Error"
+		return []Response{}, res
+	}
+
+	if role != "Admin" {
+		w.WriteHeader(http.StatusPreconditionFailed)
+		res.Message = "Unauthorised User"
+		return []Response{}, res
+	}
+
 	var response []Response
 	q := &query{}
 	limit := r.Form.Get("limit")
 	if limit != "" {
 		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
-			return response, Shared.ErrorMsg{Message: "parseerr"}
+			return response, Shared.ErrorMessage{Message: "parseerr"}
 		}
 	} else {
 		q.Limit = 10
@@ -268,7 +334,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	page := r.Form.Get("page")
 	if page != "" {
 		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
-			return response, Shared.ErrorMsg{Message: "parseerr"}
+			return response, Shared.ErrorMessage{Message: "parseerr"}
 		}
 		q.Page = q.Page - 1
 	} else {
@@ -277,10 +343,9 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	teamid := r.Form.Get("teamid")
 	if teamid != "" {
 		if err := Shared.ParseInt(r.Form.Get("teamid"), &q.TeamId); err != nil {
-			return response, Shared.ErrorMsg{Message: "parseerr"}
+			return response, Shared.ErrorMessage{Message: "parseerr"}
 		}
 	}
-	// q.TeamId = r.Form.Get("teamid")
 
 	q.FirstName = r.Form.Get("firstname")
 	q.LastName = r.Form.Get("lastname")
@@ -292,7 +357,8 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	offset := q.Limit * q.Page
 
 	var teams []Response
-	sqlStatement := `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("Role"),("JoiningDate") FROM slh_teams 
+	sqlStatement = `SELECT ("TeamId"),("FirstName"),("LastName"),("Email"),("Address"),("MobileNo"), ("Status"),("Role"),("JoiningDate"),
+	("Gender") FROM slh_teams 
 	WHERE ("TeamId")::text ilike  ''|| $1 ||'%'
 	OR ("FirstName") ILIKE ''|| $2 ||'%' 
 	AND ("LastName") ILIKE '' || $3 || '%' 
@@ -305,14 +371,15 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	if err != nil {
 		panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return teams, Shared.ErrorMsg{Message: "Internal Server Error."}
+		return teams, Shared.ErrorMessage{Message: "Internal Server Error."}
 	}
 
 	// fmt.Println(len(rows))
 	for rows.Next() {
 		var team = Response{}
 		// fmt.Println(100)
-		rows.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Role, &team.Joining_Date)
+		rows.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Address, &team.MobileNo, &team.Status, &team.Role, &team.Joining_Date,
+			&team.Gender)
 		teams = append(teams, team)
 		// cnt = cnt + 1
 	}
@@ -325,7 +392,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	if err != nil {
 		panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return teams, Shared.ErrorMsg{Message: "Internal Server Error."}
+		return teams, Shared.ErrorMessage{Message: "Internal Server Error."}
 	}
 
 	w.Header().Set("Total-Count", strconv.Itoa(cnt))
@@ -336,47 +403,66 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 
 	w.Header().Set("Total-Pages", strconv.Itoa(totalPages))
 
-	fmt.Println(cnt)
-	fmt.Println(cnt)
-	return teams, Shared.ErrorMsg{Message: ""}
+	return teams, Shared.ErrorMessage{Message: ""}
 }
 
-func UpdateMemberPassword(w http.ResponseWriter, r *http.Request) (Team, Shared.ErrorMsg) {
+func UpdateMemberPassword(w http.ResponseWriter, r *http.Request) (Team, Shared.ErrorMessage) {
 	w.Header().Set("Content-Type", "application/json")
+
+	userEmail := context.Get(r, middleware.Decoded)
+
+	var role string
+	var res Shared.ErrorMessage
 	r.ParseForm()
+
+	sqlStatement := `SELECT ("Role") FROM slh_teams WHERE ("Email" = $1);`
+	row := config.Db.QueryRow(sqlStatement, userEmail)
+	err := row.Scan(&role)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		res.Message = "Internal Server Error"
+		return Team{}, res
+	}
+
+	if role != "Admin" {
+		w.WriteHeader(http.StatusPreconditionFailed)
+		res.Message = "Unauthorised User"
+		return Team{}, res
+	}
+
 	var team = Team{}
-	err := json.NewDecoder(r.Body).Decode(&team)
+	err = json.NewDecoder(r.Body).Decode(&team)
 	if err != nil {
 		panic(err)
 	}
 
 	if team.Password == "" {
 		w.WriteHeader(http.StatusPreconditionFailed)
-		return team, Shared.ErrorMsg{Message: "BLANK FIELDS"}
+		return team, Shared.ErrorMessage{Message: "BLANK FIELDS"}
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(team.Password), 8)
-	userEmail := team.Email
+	userEmail = team.Email
 
-	sqlStatement := ` UPDATE slh_teams SET "Password" = $1  WHERE ("Email") = $2`
+	sqlStatement = ` UPDATE slh_teams SET "Password" = $1  WHERE ("Email") = $2`
 
 	_, err = config.Db.Exec(sqlStatement, string(hashedPassword), userEmail)
 	if err != nil {
 		panic(err)
 	}
 	w.WriteHeader(http.StatusOK)
-	return team, Shared.ErrorMsg{Message: "Password Changed"}
+	return team, Shared.ErrorMessage{Message: "Password Changed"}
 }
 
-func TeamLogout(w http.ResponseWriter, r *http.Request) Shared.ErrorMsg {
+func TeamLogout(w http.ResponseWriter, r *http.Request) Shared.ErrorMessage {
 	r.ParseForm()
-	//var team = Response{}
+
 	userEmail := context.Get(r, middleware.Decoded)
 	fmt.Println(userEmail)
 	sqlStatement := `UPDATE slh_teams SET "Token"=$1 WHERE "Email"=$2`
 	_, err := config.Db.Exec(sqlStatement, "qw", userEmail)
 	if err != nil {
-		return Shared.ErrorMsg{Message: "Internal Server Error."}
+		return Shared.ErrorMessage{Message: "Internal Server Error."}
 	}
-	return Shared.ErrorMsg{Message: "Successfully Logout"}
+	return Shared.ErrorMessage{Message: "Successfully Logout"}
 }

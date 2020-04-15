@@ -1,3 +1,5 @@
+github.com/Applifier/go-libphonenumber v0.0.0-20161107150900-64e099bc8ad4 h1:uiJTA4zyx3gMefIIrOO8mdVjzHO/5cwnN2qZKRLmsnE=
+github.com/Applifier/go-libphonenumber v0.0.0-20161107150900-64e099bc8ad4/go.mod h1:jSYsld9I9MsoRWriByGaeITJ2FNPuG9bNqPu2S2pbuw=
 github.com/dgrijalva/jwt-go v1.0.2 h1:KPldsxuKGsS2FPWsNeg9ZO18aCrGKujPoWXn2yo+KQM=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=

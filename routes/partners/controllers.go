@@ -10,25 +10,6 @@ import (
 	"time"
 )
 
-// func BuildUpdateResponse(response *UpResponse, partner Partner) UpResponse {
-// 	response.FirstName = partner.FirstName
-// 	response.LastName = partner.LastName
-// 	response.MiddleName = partner.MiddleName
-// 	response.Partner_Email = partner.Partner_Email
-// 	response.Partner_MobileNo = partner.Partner_MobileNo
-// 	response.Partner_Alternate_MobileNo = partner.Partner_Alternate_MobileNo
-// 	response.Partner_Address = partner.Partner_Address
-// 	response.Pincode = partner.Pincode
-// 	response.Latitude = partner.Latitude
-// 	response.Longitude = partner.Longitude
-// 	response.Per_Visit_Price_Commission = partner.Per_Visit_Price_Commission
-// 	response.Commission_Type = partner.Commission_Type
-// 	response.Onboard_Date = partner.Onboard_Date
-// 	response.UpdatedAt = partner.UpdatedAt
-// 	response.Updated_By = partner.Updated_By
-// 	return *response
-// }
-
 func CreatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner) {
 	fmt.Println("owaas")
 	r.ParseForm()
@@ -46,9 +27,10 @@ func CreatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 		w.WriteHeader(http.StatusBadRequest)
 		return partner, res
 	}
-	partner.Onboard_Date = time.Now().Local()
-	partner.CreatedAt = time.Now().Local()
-	partner.UpdatedAt = time.Now().Local()
+
+	curr_time := time.Now()
+	partner.UpdatedAt = curr_time.Format("02-01-2006 3:4:5 PM")
+	partner.CreatedAt = curr_time.Format("02-01-2006 3:4:5 PM")
 
 	sqlStatement := `
 	INSERT INTO slh_partners ("Partner_Name", "Partner_Email", "Partner_Mobile_No", "Partner_Address", "Pincode", "Latitude", "Longitude", 
@@ -67,7 +49,15 @@ func CreatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 		// res.Message = "Email already registered"
 		// return partner, res
 	}
-	// BuildResponse(&response, partner)
+
+	partner.Partner_Souls_Id = curr_time.Format("20060102") + strconv.Itoa(partner.Partner_Id)
+	sqlStatement = `UPDATE slh_partners SET "Partner_Souls_Id" = $1 WHERE "Partner_Id" =  $2`
+	_, err = config.Db.Exec(sqlStatement, partner.Partner_Souls_Id, partner.Partner_Id)
+	if err != nil {
+
+		return Partner{}, ErrPartner{Message: "Internal Server Error."}
+	}
+
 	res.Message = ""
 	return partner, res
 }
@@ -91,8 +81,9 @@ func UpdatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 		w.WriteHeader(http.StatusBadRequest)
 		return Partner{}, res
 	}
-	partner.Onboard_Date = time.Now().Local()
-	partner.UpdatedAt = time.Now().Local()
+
+	curr_time := time.Now()
+	partner.UpdatedAt = curr_time.Format("02-01-2006 3:4:5 PM")
 	fmt.Println(partner.Partner_Id)
 
 	var result Shared.Result
@@ -139,16 +130,6 @@ func ListPartner(w http.ResponseWriter, r *http.Request) ([]Partner, ErrorMessag
 	} else {
 		q.Page = 0
 	}
-
-	// mobile := r.Form.Get("mobile_no")
-	// if mobile != "" {
-	// 	if err := Shared.ParseInt(r.Form.Get("mobile_no"), &q.Customer_Mobile_No); err != nil {
-	// 		return response, ErrorMessage{Message: "parseerr"}
-	// 	}
-	// 	q.Customer_Mobile_No = q.Customer_Mobile_No
-	// } else {
-	// 	q.Customer_Mobile_No = 0
-	// }
 
 	q.Partner_Name = r.Form.Get("partner_name")
 	q.Partner_Email = r.Form.Get("partner_email")

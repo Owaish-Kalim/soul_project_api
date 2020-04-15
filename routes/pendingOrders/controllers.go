@@ -36,18 +36,10 @@ func CustomerBooking(w http.ResponseWriter, r *http.Request) (Tran, ErorMsg) {
 		w.WriteHeader(http.StatusNotFound)
 		return Tran{}, ErorMsg{Message: "Unauthorised User"}
 	}
-
-	customer.CreatedAt = time.Now().Local()
-	// Input or Provide ??
-	customer.Slot_Date = time.Now().Local()
-	customer.Slot_Time = time.Now().Local()
-
-	// string??
-	customer.Latitude = "qwerty"
-	customer.Longitude = "asdfg"
-
-	customer.Is_Order_Confirmed = false
-	customer.Total_Order_Amount = 10000
+	curr_time := time.Now()
+	customer.CreatedAt = curr_time.Format("02-01-2006 3:4:5 PM")
+	customer.Is_Order_Confirmed = "Confirmed"
+	customer.Total_Order_Amount = "10000"
 
 	cur_time := time.Now().Unix()
 	tranId := strconv.FormatInt(int64(cur_time), 10) + "-" + strconv.Itoa(customer.Customer_Id)
@@ -124,50 +116,31 @@ func ListCustomerBooking(w http.ResponseWriter, r *http.Request) ([]CustomerOrde
 		q.Page = 0
 	}
 
-	mobile := r.Form.Get("mobile_no")
-	if mobile != "" {
-		if err := Shared.ParseInt(r.Form.Get("mobile_no"), &q.Customer_Mobile_No); err != nil {
-			return response, ErrorMessage{Message: "parseerr"}
-		}
-		q.Customer_Mobile_No = q.Customer_Mobile_No
-	} else {
-		q.Customer_Mobile_No = 0
-	}
-
 	q.Customer_Souls_Id = r.Form.Get("customer_souls_id")
 	q.Customer_Name = r.Form.Get("customer_name")
-	q.Customer_Order_Id = r.Form.Get("customer_id")
-	q.Customer_Address = r.Form.Get("customer_address")
 	q.Massage_Duration = r.Form.Get("massage_duration")
-	q.Massage_For = r.Form.Get("massage_for")
 	q.Merchant_Transaction_Id = r.Form.Get("merchant_transaction_id")
-	// q.Customer_Mobile_No = r.Form.Get("mobile_no")
-	// q.Status = r.Form.Get("status")
-	// q. = r.Form.Get("customer_souls_id")
-	// q.Customer_Name = r.Form.Get("name")
-	// q.Customer_Order_Id = r.Form.Get("order_id")
-	// q.Customer_Mobile_No = r.Form.Get("mobile_no")
-	// q.Status = r.Form.Get("status")
-	q.Customer_Email = r.Form.Get("customer_email")
-	q.Customer_Gender = r.Form.Get("customer_gender")
+	q.Pincode = r.Form.Get("pincode")
+	q.Is_Order_Confirmed = r.Form.Get("is_order_confirmed")
+	q.Total_Order_Amount = r.Form.Get("total_order_amount")
 
-	// fmt.Println(q)
-	offset := q.Limit * q.Page
-	// fmt.Print("ASHS")
+	offset := q.Limit * q.Page // slot time and slot date createtime search
+
 	var customers []CustomerOrder
 	sqlStatement := `SELECT ("Customer_Order_Id"), ("Customer_Souls_Id"),("Customer_Name"), ("Customer_Id"),("Pincode"),("Customer_Address"),
 	("Massage_Duration") ,("Number_Of_Therapists_Required"),("Massage_For"), ("Therapist_Gender"), ("Merchant_Transaction_Id"),
 	("Total_Order_Amount"), ("Latitude"),("Longitude"), ("Is_Order_Confirmed"), ("CreatedAt"), ("Slot_Date"), ("Slot_Time") FROM slh_customers_pending_orders
 	WHERE ("Customer_Souls_Id") LIKE  ''||$1||'%' 
 	AND ("Customer_Name") LIKE ''|| $2 ||'%' 
-	AND ("Customer_Address") LIKE ''|| $3 ||'%' 
-	AND ("Massage_Duration") LIKE ''|| $4 ||'%' 
-	AND ("Massage_For") LIKE ''|| $5 ||'%' 
-	AND ("Merchant_Transaction_Id") LIKE ''|| $6 ||'%' 
-	ORDER BY ("CreatedAt") DESC LIMIT $7 OFFSET $8`
+	AND ("Massage_Duration") LIKE ''|| $3 ||'%' 
+	AND ("Total_Order_Amount") LIKE ''|| $4 ||'%' 
+	AND ("Merchant_Transaction_Id") LIKE ''|| $5 ||'%' 
+	AND ("Pincode") LIKE ''|| $6 ||'%' 
+	AND ("Is_Order_Confirmed") LIKE ''|| $7 ||'%'  
+	ORDER BY ("CreatedAt") DESC LIMIT $8 OFFSET $9`
 
-	rows, err := config.Db.Query(sqlStatement, q.Customer_Souls_Id, q.Customer_Name, q.Customer_Address, q.Massage_Duration, q.Massage_For,
-		q.Merchant_Transaction_Id, q.Limit, offset)
+	rows, err := config.Db.Query(sqlStatement, q.Customer_Souls_Id, q.Customer_Name, q.Massage_Duration, q.Total_Order_Amount, q.Merchant_Transaction_Id,
+		q.Pincode, q.Is_Order_Confirmed, q.Limit, offset)
 
 	if err != nil {
 		fmt.Print("asfafs")
@@ -190,12 +163,13 @@ func ListCustomerBooking(w http.ResponseWriter, r *http.Request) ([]CustomerOrde
 	sqlStatement = `SELECT COUNT(*) FROM slh_customers_pending_orders WHERE 
 	("Customer_Souls_Id") LIKE  ''||$1||'%' 
 	AND ("Customer_Name") LIKE ''|| $2 ||'%' 
-	AND ("Customer_Address") LIKE ''|| $3 ||'%' 
-	AND ("Massage_Duration") LIKE ''|| $4 ||'%' 
-	AND ("Massage_For") LIKE ''|| $5 ||'%' 
-	AND ("Merchant_Transaction_Id") LIKE ''|| $6 ||'%'`
-	cntRow := config.Db.QueryRow(sqlStatement, q.Customer_Souls_Id, q.Customer_Name, q.Customer_Address, q.Massage_Duration,
-		q.Massage_For, q.Merchant_Transaction_Id)
+	AND ("Massage_Duration") LIKE ''|| $3 ||'%' 
+	AND ("Total_Order_Amount") LIKE ''|| $4 ||'%' 
+	AND ("Merchant_Transaction_Id") LIKE ''|| $5 ||'%' 
+	AND ("Pincode") LIKE ''|| $6 ||'%' 
+	AND ("Is_Order_Confirmed") LIKE ''|| $7 ||'%' `
+	cntRow := config.Db.QueryRow(sqlStatement, q.Customer_Souls_Id, q.Customer_Name, q.Massage_Duration, q.Total_Order_Amount, q.Merchant_Transaction_Id,
+		q.Pincode, q.Is_Order_Confirmed)
 	cnt := 0
 	err = cntRow.Scan(&cnt)
 	if err != nil {

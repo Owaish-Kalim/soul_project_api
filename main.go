@@ -5,11 +5,10 @@ import (
 	"log"
 	"net/http"
 	"soul_api/middleware"
+	"soul_api/routes/comm_template"
 	"soul_api/routes/customers"
 	"soul_api/routes/partners"
 	"soul_api/routes/pendingOrders"
-
-	"soul_api/routes/comm_template"
 	"soul_api/routes/team"
 	"soul_api/routes/teamHasRole"
 	"soul_api/routes/transactions"
@@ -32,7 +31,7 @@ func main() {
 
 	r.HandleFunc("/team/login", team.Login).Methods("POST")
 	r.HandleFunc("/team/list", middleware.ValidateTokenMiddleware(team.List)).Methods("GET")
-	r.HandleFunc("/team/add-member", team.Create).Methods("POST")
+	r.HandleFunc("/team/add-member", middleware.ValidateTokenMiddleware(team.Create)).Methods("POST")
 	r.HandleFunc("/team/update/profile", middleware.ValidateTokenMiddleware(team.Update)).Methods("PUT")
 	r.HandleFunc("/team/update-member/password", middleware.ValidateTokenMiddleware(team.UpdatePassword)).Methods("PUT")
 	r.HandleFunc("/team/update/team-member", middleware.ValidateTokenMiddleware(team.UpdateMember)).Methods("PUT")

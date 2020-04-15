@@ -3,6 +3,7 @@ module soul_api
 go 1.13
 
 require (
+	github.com/Applifier/go-libphonenumber v0.0.0-20161107150900-64e099bc8ad4 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gemcook/pagination-go v0.2.1
 	github.com/gorilla/context v1.1.1

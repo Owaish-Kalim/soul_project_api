@@ -1,9 +1,5 @@
 package pendingOrders
 
-import (
-	"time"
-)
-
 type ErrorMessage struct {
 	Message string `json:"message"`
 }
@@ -17,20 +13,20 @@ type CustomerOrder struct {
 	Customer_Order_Id       int    `json:"order_id"`
 	Customer_Id             int    `json:"customer_id"`
 	Customer_Souls_Id       string `json:"customer_souls_id"`
-	Pincode                 int    `json:"pincode"`
+	Pincode                 string `json:"pincode"`
 	Customer_Address        string `json:"customer_address"`
-	Number_Of_Therapist     int    `json:"number_of_therapist"`
+	Number_Of_Therapist     string `json:"number_of_therapist"`
 	Therapist_Gender        string `json:"therapist_gender"`
 	Massage_Duration        string `json:"massage_duration"`
 	Massage_For             string `json:"massage_for"`
-	Slot_Time               time.Time
-	Slot_Date               time.Time
+	Slot_Time               string `json:"slot_time"`
+	Slot_Date               string `json:"slot_date"`
 	Latitude                string `json:"latitude"`
 	Longitude               string `json:"longitude"`
-	Is_Order_Confirmed      bool   `json:"is_order_confirmed"`
+	Is_Order_Confirmed      string `json:"is_order_confirmed"`
 	Merchant_Transaction_Id string `json:"merchant_transaction_id"`
-	CreatedAt               time.Time
-	Total_Order_Amount      int `json:"total_order_amount"`
+	CreatedAt               string `json:"created_at"`
+	Total_Order_Amount      string `json:"total_order_amount"`
 }
 
 type ErorMsg struct {
@@ -47,26 +43,16 @@ type query struct {
 	Page                    int
 	Customer_Souls_Id       string
 	Customer_Name           string
-	Customer_Order_Id       string
-	Customer_Mobile_No      int
-	Status                  bool
-	Customer_Gender         string
-	Customer_Email          string
-	Registered_Source       string
-	Customer_Address        string
+	Is_Order_Confirmed      string
+	Pincode                 string
 	Massage_Duration        string
-	Massage_For             string
 	Merchant_Transaction_Id string
-	Total_Order_Amount      int
-	Payment_Gateway_Id      string
-	Payment_Gateway_Mode    string
-	Transaction_Mode        string
-	Bank_Type               string
+	Total_Order_Amount      string
 }
 
 func CheckEmpty(customer CustomerOrder, res *ErorMsg) {
 
-	if customer.Number_Of_Therapist == 0 {
+	if customer.Number_Of_Therapist == "" {
 		res.Number_Of_Therapist = "Number of therapist cannot be empty."
 		res.Message = "Error"
 	}

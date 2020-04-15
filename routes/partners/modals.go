@@ -1,15 +1,12 @@
 package partners
 
-import (
-	"time"
-)
-
 type ErrorMessage struct {
 	Message string `json:"message"`
 }
 
 type Partner struct {
 	Partner_Id       int    `json:"partner_id"`
+	Partner_Souls_Id string `json:"partner_souls_id"`
 	Partner_Name     string `json:"partner_name"`
 	Partner_Email    string `json:"partner_email"`
 	Partner_MobileNo string `json:"partner_mobileno"`
@@ -19,9 +16,9 @@ type Partner struct {
 	Longitude        string `"json:longitude"`
 	Rate             string `"json:"rate,string"`
 	Commission_Type  string `"json:"commission_type"`
-	Onboard_Date     time.Time
-	UpdatedAt        time.Time
-	CreatedAt        time.Time
+	Onboard_Date     string `json:"onborad_date"`
+	UpdatedAt        string `json:"updated_at"`
+	CreatedAt        string `json:"created_at"`
 	CreatedBy        string `json:"created_by"`
 	UpdatedBy        string `json:"updated_by"`
 	Partner_Gender   string `json:"partner_gender"`
