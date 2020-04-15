@@ -17,7 +17,8 @@ func TeamHasRole(w http.ResponseWriter, r *http.Request) ([]TeamRole, Shared.Err
 	limit := r.Form.Get("limit")
 	if limit != "" {
 		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
-			return response, Shared.ErrorMsg{Message: "parseerr"}
+			w.WriteHeader(http.StatusInternalServerError)
+			return []TeamRole{}, Shared.ErrorMsg{Message: "Internal Server Error."}
 		}
 	} else {
 		q.Limit = 10
@@ -25,7 +26,8 @@ func TeamHasRole(w http.ResponseWriter, r *http.Request) ([]TeamRole, Shared.Err
 	page := r.Form.Get("page")
 	if page != "" {
 		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
-			return response, Shared.ErrorMsg{Message: "parseerr"}
+			w.WriteHeader(http.StatusInternalServerError)
+			return []TeamRole{}, Shared.ErrorMsg{Message: "Internal Server Error."}
 		}
 		q.Page = q.Page - 1
 	} else {
@@ -34,7 +36,8 @@ func TeamHasRole(w http.ResponseWriter, r *http.Request) ([]TeamRole, Shared.Err
 	teamid := r.Form.Get("teamid")
 	if teamid != "" {
 		if err := Shared.ParseInt(r.Form.Get("teamid"), &q.TeamId); err != nil {
-			return response, Shared.ErrorMsg{Message: "parseerr"}
+			w.WriteHeader(http.StatusInternalServerError)
+			return []TeamRole{}, Shared.ErrorMsg{Message: "Internal Server Error."}
 		}
 	}
 	q.Status = r.Form.Get("status")
@@ -73,7 +76,7 @@ func TeamHasRole(w http.ResponseWriter, r *http.Request) ([]TeamRole, Shared.Err
 	cnt := 0
 	err = cntRow.Scan(&cnt)
 	if err != nil {
-		panic(err)
+		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return teamRoles, Shared.ErrorMsg{Message: "Internal Server Error."}
 	}
@@ -86,8 +89,8 @@ func TeamHasRole(w http.ResponseWriter, r *http.Request) ([]TeamRole, Shared.Err
 
 	w.Header().Set("Total-Pages", strconv.Itoa(totalPages))
 
-	fmt.Println(cnt)
-	fmt.Println(15)
+	// fmt.Println(cnt)
+	// fmt.Println(15)
 	return teamRoles, Shared.ErrorMsg{Message: ""}
 }
 

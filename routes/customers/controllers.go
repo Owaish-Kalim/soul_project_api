@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"soul_api/config"
 	Shared "soul_api/routes"
 	"strconv"
@@ -38,6 +39,13 @@ func AddCustomer(w http.ResponseWriter, r *http.Request) (Customer, ErrorMsg) {
 	if res.Message != "" {
 		w.WriteHeader(http.StatusPreconditionFailed)
 		return customer, res
+	}
+
+	re := regexp.MustCompile(`^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
+	if re.MatchString(customer.Customer_Mobile_No) == false {
+		w.WriteHeader(http.StatusPreconditionFailed)
+		res.Message = "Invalid Mobile No"
+		return Customer{}, res
 	}
 
 	fmt.Println(1)
@@ -159,12 +167,12 @@ func UpdateCustomer(w http.ResponseWriter, r *http.Request) (CustomerUpd, ErrorM
 func ListCustomer(w http.ResponseWriter, r *http.Request) ([]Customer, ErrorMessage) {
 	r.ParseForm()
 	fmt.Print("Owaish")
-	var response []Customer
 	q := &query{}
 	limit := r.Form.Get("limit")
 	if limit != "" {
 		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
-			return response, ErrorMessage{Message: "parseerr"}
+			w.WriteHeader(http.StatusInternalServerError)
+			return []Customer{}, ErrorMessage{Message: "Internal Server Error"}
 		}
 	} else {
 		q.Limit = 10
@@ -172,7 +180,8 @@ func ListCustomer(w http.ResponseWriter, r *http.Request) ([]Customer, ErrorMess
 	page := r.Form.Get("page")
 	if page != "" {
 		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
-			return response, ErrorMessage{Message: "parseerr"}
+			w.WriteHeader(http.StatusInternalServerError)
+			return []Customer{}, ErrorMessage{Message: "Internal Server Error"}
 		}
 		q.Page = q.Page - 1
 	} else {
@@ -207,7 +216,7 @@ func ListCustomer(w http.ResponseWriter, r *http.Request) ([]Customer, ErrorMess
 	// fmt.Println(rows)
 	if err != nil {
 		fmt.Print("asfafs")
-		panic(err)
+		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return customers, ErrorMessage{Message: "Internal Server Error."}
 	}
@@ -236,7 +245,7 @@ func ListCustomer(w http.ResponseWriter, r *http.Request) ([]Customer, ErrorMess
 	err = cntRow.Scan(&cnt)
 	if err != nil {
 		// fmt.Println(232)
-		panic(err)
+		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return customers, ErrorMessage{Message: "Internal Server Error."}
 	}

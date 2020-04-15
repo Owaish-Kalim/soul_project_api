@@ -197,14 +197,15 @@ func ViewCustomerTransaction(w http.ResponseWriter, r *http.Request) (CustomerTr
 }
 
 func ListCustomerTransaction(w http.ResponseWriter, r *http.Request) ([]CustomerTran, ErrorMessage) {
-	fmt.Println(1266)
+	// fmt.Println(1266)
 	r.ParseForm()
-	var response []CustomerTran
+	// var response []CustomerTran
 	q := &query{}
 	limit := r.Form.Get("limit")
 	if limit != "" {
 		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
-			return response, ErrorMessage{Message: "parseerr"}
+			w.WriteHeader(http.StatusInternalServerError)
+			return []CustomerTran{}, ErrorMessage{Message: "Internal Server Error"}
 		}
 	} else {
 		q.Limit = 10
@@ -212,7 +213,8 @@ func ListCustomerTransaction(w http.ResponseWriter, r *http.Request) ([]Customer
 	page := r.Form.Get("page")
 	if page != "" {
 		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
-			return response, ErrorMessage{Message: "parseerr"}
+			w.WriteHeader(http.StatusInternalServerError)
+			return []CustomerTran{}, ErrorMessage{Message: "Internal Server Error"}
 		}
 		q.Page = q.Page - 1
 	} else {
@@ -256,9 +258,9 @@ func ListCustomerTransaction(w http.ResponseWriter, r *http.Request) ([]Customer
 	fmt.Println(12)
 
 	if err != nil {
-		fmt.Print("asfafs")
-		fmt.Println(12)
-		panic(err)
+		// fmt.Print("asfafs")
+		// fmt.Println(12)
+		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return customers, ErrorMessage{Message: "Internal Server Error."}
 	}
@@ -290,8 +292,8 @@ func ListCustomerTransaction(w http.ResponseWriter, r *http.Request) ([]Customer
 	cnt := 0
 	err = cntRow.Scan(&cnt)
 	if err != nil {
-		fmt.Println(232)
-		fmt.Println(2398)
+		// fmt.Println(232)
+		// fmt.Println(2398)
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return customers, ErrorMessage{Message: "Internal Server Error."}
@@ -310,7 +312,7 @@ func ListCustomerTransaction(w http.ResponseWriter, r *http.Request) ([]Customer
 }
 
 func UpdateCustomerTransaction(w http.ResponseWriter, r *http.Request) (CustomerTran, ErorMesg) {
-	fmt.Println(12211)
+	// fmt.Println(12211)
 	r.ParseForm()
 	customer := CustomerTran{}
 	err := json.NewDecoder(r.Body).Decode(&customer)
@@ -330,7 +332,7 @@ func UpdateCustomerTransaction(w http.ResponseWriter, r *http.Request) (Customer
 		customer.Customer_Address, customer.Pincode, customer.Latitude, customer.Longitude, customer.Total_Order_Amount,
 		customer.Massage_Duration, customer.Merchant_Transaction_Id)
 	if err != nil {
-		fmt.Println(22)
+		// fmt.Println(22)
 		w.WriteHeader(http.StatusInternalServerError)
 		return CustomerTran{}, ErorMesg{Message: "Internal Server Error"}
 	}

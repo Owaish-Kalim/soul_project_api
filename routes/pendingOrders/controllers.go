@@ -96,12 +96,13 @@ func ViewCustomerBooking(w http.ResponseWriter, r *http.Request) (CustomerOrder,
 
 func ListCustomerBooking(w http.ResponseWriter, r *http.Request) ([]CustomerOrder, ErrorMessage) {
 	r.ParseForm()
-	var response []CustomerOrder
+
 	q := &query{}
 	limit := r.Form.Get("limit")
 	if limit != "" {
 		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
-			return response, ErrorMessage{Message: "parseerr"}
+			w.WriteHeader(http.StatusInternalServerError)
+			return []CustomerOrder{}, ErrorMessage{Message: "Internal Server Error."}
 		}
 	} else {
 		q.Limit = 10
@@ -109,7 +110,8 @@ func ListCustomerBooking(w http.ResponseWriter, r *http.Request) ([]CustomerOrde
 	page := r.Form.Get("page")
 	if page != "" {
 		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
-			return response, ErrorMessage{Message: "parseerr"}
+			w.WriteHeader(http.StatusInternalServerError)
+			return []CustomerOrder{}, ErrorMessage{Message: "Internal Server Error."}
 		}
 		q.Page = q.Page - 1
 	} else {
@@ -144,7 +146,7 @@ func ListCustomerBooking(w http.ResponseWriter, r *http.Request) ([]CustomerOrde
 
 	if err != nil {
 		fmt.Print("asfafs")
-		panic(err)
+		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return customers, ErrorMessage{Message: "Internal Server Error."}
 	}
@@ -173,8 +175,8 @@ func ListCustomerBooking(w http.ResponseWriter, r *http.Request) ([]CustomerOrde
 	cnt := 0
 	err = cntRow.Scan(&cnt)
 	if err != nil {
-		fmt.Println(232)
-		panic(err)
+		// fmt.Println(232)
+		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return customers, ErrorMessage{Message: "Internal Server Error."}
 	}

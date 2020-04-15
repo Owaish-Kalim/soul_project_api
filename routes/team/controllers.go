@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"soul_api/config"
 	"soul_api/middleware"
 	Shared "soul_api/routes"
@@ -55,6 +56,13 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 		return response, res
 	}
 
+	re := regexp.MustCompile(`^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
+	if re.MatchString(team.MobileNo) == false {
+		w.WriteHeader(http.StatusPreconditionFailed)
+		res.Message = "Invalid Mobile No"
+		return Response{}, res
+	}
+
 	team_role := TeamRole{}
 	sqlStatement = `SELECT ("Role_Id") FROM slh_roles WHERE ("Role_Name" = $1);`
 	row = config.Db.QueryRow(sqlStatement, team.Role)
@@ -85,7 +93,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	if err != nil {
 		// panic(err)
 		w.WriteHeader(http.StatusPreconditionFailed)
-		res.Message = "Email already registered"
+		res.Message = err.Error()
 		return response, res
 	}
 	BuildResponse(&response, team)
@@ -321,12 +329,13 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 		return []Response{}, res
 	}
 
-	var response []Response
 	q := &query{}
 	limit := r.Form.Get("limit")
 	if limit != "" {
 		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
-			return response, Shared.ErrorMessage{Message: "parseerr"}
+			w.WriteHeader(http.StatusInternalServerError)
+			res.Message = "Internal Server Error"
+			return []Response{}, res
 		}
 	} else {
 		q.Limit = 10
@@ -334,7 +343,9 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	page := r.Form.Get("page")
 	if page != "" {
 		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
-			return response, Shared.ErrorMessage{Message: "parseerr"}
+			w.WriteHeader(http.StatusInternalServerError)
+			res.Message = "Internal Server Error"
+			return []Response{}, res
 		}
 		q.Page = q.Page - 1
 	} else {
@@ -343,7 +354,9 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	teamid := r.Form.Get("teamid")
 	if teamid != "" {
 		if err := Shared.ParseInt(r.Form.Get("teamid"), &q.TeamId); err != nil {
-			return response, Shared.ErrorMessage{Message: "parseerr"}
+			w.WriteHeader(http.StatusInternalServerError)
+			res.Message = "Internal Server Error"
+			return []Response{}, res
 		}
 	}
 
@@ -369,7 +382,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	rows, err := config.Db.Query(sqlStatement, q.TeamId, q.FirstName, q.LastName, q.Email, q.MobileNo, q.Status, q.Limit, offset)
 	// fmt.Println(rows)
 	if err != nil {
-		panic(err)
+		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return teams, Shared.ErrorMessage{Message: "Internal Server Error."}
 	}
@@ -390,7 +403,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	cnt := 0
 	err = cntRow.Scan(&cnt)
 	if err != nil {
-		panic(err)
+		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return teams, Shared.ErrorMessage{Message: "Internal Server Error."}
 	}

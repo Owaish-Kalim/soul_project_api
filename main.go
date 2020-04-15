@@ -9,10 +9,12 @@ import (
 	"soul_api/routes/customers"
 	"soul_api/routes/partners"
 	"soul_api/routes/pendingOrders"
+
+	"soul_api/routes/souls_settings"
+
 	"soul_api/routes/team"
 	"soul_api/routes/teamHasRole"
 	"soul_api/routes/transactions"
-
 	"soul_api/routes/users"
 
 	"github.com/gorilla/mux"
@@ -61,9 +63,12 @@ func main() {
 	r.HandleFunc("/partner/update", middleware.ValidateTokenMiddleware(partners.Update)).Methods("PUT")
 	r.HandleFunc("/partner/list", middleware.ValidateTokenMiddleware(partners.List)).Methods("GET")
 
-	r.HandleFunc("/souls/settings", middleware.ValidateTokenMiddleware(comm_template.Create)).Methods("POST")
+	r.HandleFunc("/communication/template/create", middleware.ValidateTokenMiddleware(comm_template.Create)).Methods("POST")
+	r.HandleFunc("/communication/template/list", middleware.ValidateTokenMiddleware(comm_template.List)).Methods("GET")
 
-	// r.HandleFunc("customers/assign/partners", middleware.ValidateTokenMiddleware(custmr_assign_partner.Create)).Methods("POST")
+	r.HandleFunc("/souls/settings/create", middleware.ValidateTokenMiddleware(souls_settings.Create)).Methods("POST")
+	r.HandleFunc("/souls/settings/update", middleware.ValidateTokenMiddleware(souls_settings.Update)).Methods("PUT")
+	r.HandleFunc("/souls/settings/list", middleware.ValidateTokenMiddleware(souls_settings.List)).Methods("GET")
 
 	fmt.Println("Starting Server")
 	log.Fatal(http.ListenAndServe(":8000", handler))

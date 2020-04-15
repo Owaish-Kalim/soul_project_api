@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"soul_api/config"
 	Shared "soul_api/routes"
 	"strconv"
@@ -26,6 +27,13 @@ func CreatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 	if res.Message != "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return partner, res
+	}
+
+	re := regexp.MustCompile(`^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
+	if re.MatchString(partner.Partner_MobileNo) == false {
+		w.WriteHeader(http.StatusPreconditionFailed)
+		res.Message = "Invalid Mobile No"
+		return Partner{}, res
 	}
 
 	curr_time := time.Now()
@@ -101,9 +109,9 @@ func UpdatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 		panic(err)
 	}
 	if count == 0 {
-		panic(err)
-		// w.WriteHeader(http.StatusNotFound)
-		// return Partner{}, ErrPartner{Message: "Unauthorised User"}
+		// panic(err)
+		w.WriteHeader(http.StatusNotFound)
+		return Partner{}, ErrPartner{Message: "Unauthorised User"}
 	}
 
 	return partner, ErrPartner{}
@@ -111,12 +119,12 @@ func UpdatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 
 func ListPartner(w http.ResponseWriter, r *http.Request) ([]Partner, ErrorMessage) {
 	r.ParseForm()
-	var response []Partner
 	q := &query{}
 	limit := r.Form.Get("limit")
 	if limit != "" {
 		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
-			return response, ErrorMessage{Message: "parseerr"}
+			w.WriteHeader(http.StatusInternalServerError)
+			return []Partner{}, ErrorMessage{Message: "Internal Server Error."}
 		}
 	} else {
 		q.Limit = 10
@@ -124,7 +132,8 @@ func ListPartner(w http.ResponseWriter, r *http.Request) ([]Partner, ErrorMessag
 	page := r.Form.Get("page")
 	if page != "" {
 		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
-			return response, ErrorMessage{Message: "parseerr"}
+			w.WriteHeader(http.StatusInternalServerError)
+			return []Partner{}, ErrorMessage{Message: "Internal Server Error."}
 		}
 		q.Page = q.Page - 1
 	} else {
@@ -149,10 +158,10 @@ func ListPartner(w http.ResponseWriter, r *http.Request) ([]Partner, ErrorMessag
 	rows, err := config.Db.Query(sqlStatement, q.Partner_Name, q.Partner_Email, q.Partner_Gender, q.Limit, offset)
 
 	if err != nil {
-		fmt.Print("asfafs")
-		panic(err)
-		// w.WriteHeader(http.StatusInternalServerError)
-		// return customers, ErrorMessage{Message: "Internal Server Error."}
+		// fmt.Print("asfafs")
+		// panic(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return customers, ErrorMessage{Message: "Internal Server Error."}
 	}
 
 	for rows.Next() {
@@ -173,9 +182,9 @@ func ListPartner(w http.ResponseWriter, r *http.Request) ([]Partner, ErrorMessag
 	cnt := 0
 	err = cntRow.Scan(&cnt)
 	if err != nil {
-		fmt.Println(232)
-		fmt.Println(4747)
-		panic(err)
+		// fmt.Println(232)
+		// fmt.Println(4747)
+		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return customers, ErrorMessage{Message: "Internal Server Error."}
 	}
