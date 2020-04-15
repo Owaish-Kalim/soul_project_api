@@ -15,13 +15,16 @@ func CreatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 	fmt.Println("owaas")
 	r.ParseForm()
 	partner := Partner{}
+	var res ErrPartner
 	// response := Response{}
 	err := json.NewDecoder(r.Body).Decode(&partner)
 	if err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		res.Message = err.Error()
+		return Partner{}, res
+		// panic(err)
 	}
 
-	var res ErrPartner
 	res.Message = ""
 	CheckEmpty(partner, &res)
 	if res.Message != "" {
@@ -32,7 +35,7 @@ func CreatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 	re := regexp.MustCompile(`^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
 	if re.MatchString(partner.Partner_MobileNo) == false {
 		w.WriteHeader(http.StatusPreconditionFailed)
-		res.Message = "Invalid Mobile No"
+		res.Message = err.Error()
 		return Partner{}, res
 	}
 
@@ -52,18 +55,18 @@ func CreatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 		partner.UpdatedBy, partner.Partner_Gender, partner.CreatedBy).Scan(&partner.Partner_Id)
 	if err != nil {
 		fmt.Println("owaishhh")
-		panic(err)
-		// w.WriteHeader(http.StatusPreconditionFailed)
-		// res.Message = "Email already registered"
-		// return partner, res
+		// panic(err)
+		w.WriteHeader(http.StatusPreconditionFailed)
+		res.Message = err.Error()
+		return partner, res
 	}
 
 	partner.Partner_Souls_Id = curr_time.Format("20060102") + strconv.Itoa(partner.Partner_Id)
 	sqlStatement = `UPDATE slh_partners SET "Partner_Souls_Id" = $1 WHERE "Partner_Id" =  $2`
 	_, err = config.Db.Exec(sqlStatement, partner.Partner_Souls_Id, partner.Partner_Id)
 	if err != nil {
-
-		return Partner{}, ErrPartner{Message: "Internal Server Error."}
+		w.WriteHeader(http.StatusInternalServerError)
+		return Partner{}, ErrPartner{Message: err.Error()}
 	}
 
 	res.Message = ""
@@ -111,7 +114,7 @@ func UpdatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 	if count == 0 {
 		// panic(err)
 		w.WriteHeader(http.StatusNotFound)
-		return Partner{}, ErrPartner{Message: "Unauthorised User"}
+		return Partner{}, ErrPartner{Message: err.Error()}
 	}
 
 	return partner, ErrPartner{}
@@ -124,7 +127,7 @@ func ListPartner(w http.ResponseWriter, r *http.Request) ([]Partner, ErrorMessag
 	if limit != "" {
 		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return []Partner{}, ErrorMessage{Message: "Internal Server Error."}
+			return []Partner{}, ErrorMessage{Message: err.Error()}
 		}
 	} else {
 		q.Limit = 10
@@ -133,7 +136,7 @@ func ListPartner(w http.ResponseWriter, r *http.Request) ([]Partner, ErrorMessag
 	if page != "" {
 		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return []Partner{}, ErrorMessage{Message: "Internal Server Error."}
+			return []Partner{}, ErrorMessage{Message: err.Error()}
 		}
 		q.Page = q.Page - 1
 	} else {
@@ -161,7 +164,7 @@ func ListPartner(w http.ResponseWriter, r *http.Request) ([]Partner, ErrorMessag
 		// fmt.Print("asfafs")
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return customers, ErrorMessage{Message: "Internal Server Error."}
+		return customers, ErrorMessage{Message: err.Error()}
 	}
 
 	for rows.Next() {
@@ -186,7 +189,7 @@ func ListPartner(w http.ResponseWriter, r *http.Request) ([]Partner, ErrorMessag
 		// fmt.Println(4747)
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return customers, ErrorMessage{Message: "Internal Server Error."}
+		return customers, ErrorMessage{Message: err.Error()}
 	}
 
 	w.Header().Set("Total-Count", strconv.Itoa(cnt))

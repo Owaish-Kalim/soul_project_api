@@ -34,7 +34,7 @@ func CustomerBooking(w http.ResponseWriter, r *http.Request) (Tran, ErorMsg) {
 	fmt.Println(customer.Customer_Id)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		return Tran{}, ErorMsg{Message: "Unauthorised User"}
+		return Tran{}, ErorMsg{Message: err.Error()}
 	}
 	curr_time := time.Now()
 	customer.CreatedAt = curr_time.Format("02-01-2006 3:4:5 PM")
@@ -60,7 +60,7 @@ func CustomerBooking(w http.ResponseWriter, r *http.Request) (Tran, ErorMsg) {
 		customer.Total_Order_Amount).Scan(&customer.Customer_Order_Id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return Tran{}, ErorMsg{Message: "Internal Server Error"}
+		return Tran{}, ErorMsg{Message: err.Error()}
 	}
 	tran.Merchant_Transaction_Id = customer.Merchant_Transaction_Id
 	return tran, ErorMsg{}
@@ -89,7 +89,7 @@ func ViewCustomerBooking(w http.ResponseWriter, r *http.Request) (CustomerOrder,
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return CustomerOrder{}, ErrorMessage{Message: "Internal Server Error"}
+		return CustomerOrder{}, ErrorMessage{Message: err.Error()}
 	}
 	return customer, ErrorMessage{}
 }
@@ -102,7 +102,7 @@ func ListCustomerBooking(w http.ResponseWriter, r *http.Request) ([]CustomerOrde
 	if limit != "" {
 		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return []CustomerOrder{}, ErrorMessage{Message: "Internal Server Error."}
+			return []CustomerOrder{}, ErrorMessage{Message: err.Error()}
 		}
 	} else {
 		q.Limit = 10
@@ -111,7 +111,7 @@ func ListCustomerBooking(w http.ResponseWriter, r *http.Request) ([]CustomerOrde
 	if page != "" {
 		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return []CustomerOrder{}, ErrorMessage{Message: "Internal Server Error."}
+			return []CustomerOrder{}, ErrorMessage{Message: err.Error()}
 		}
 		q.Page = q.Page - 1
 	} else {
@@ -148,7 +148,7 @@ func ListCustomerBooking(w http.ResponseWriter, r *http.Request) ([]CustomerOrde
 		fmt.Print("asfafs")
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return customers, ErrorMessage{Message: "Internal Server Error."}
+		return customers, ErrorMessage{Message: err.Error()}
 	}
 	// fmt.Print("ASHS")
 	// fmt.Println(len(rows))
@@ -178,7 +178,7 @@ func ListCustomerBooking(w http.ResponseWriter, r *http.Request) ([]CustomerOrde
 		// fmt.Println(232)
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return customers, ErrorMessage{Message: "Internal Server Error."}
+		return customers, ErrorMessage{Message: err.Error()}
 	}
 
 	w.Header().Set("Total-Count", strconv.Itoa(cnt))

@@ -18,7 +18,7 @@ func TeamHasRole(w http.ResponseWriter, r *http.Request) ([]TeamRole, Shared.Err
 	if limit != "" {
 		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return []TeamRole{}, Shared.ErrorMsg{Message: "Internal Server Error."}
+			return []TeamRole{}, Shared.ErrorMsg{Message: err.Error()}
 		}
 	} else {
 		q.Limit = 10
@@ -27,7 +27,7 @@ func TeamHasRole(w http.ResponseWriter, r *http.Request) ([]TeamRole, Shared.Err
 	if page != "" {
 		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return []TeamRole{}, Shared.ErrorMsg{Message: "Internal Server Error."}
+			return []TeamRole{}, Shared.ErrorMsg{Message: err.Error()}
 		}
 		q.Page = q.Page - 1
 	} else {
@@ -37,7 +37,7 @@ func TeamHasRole(w http.ResponseWriter, r *http.Request) ([]TeamRole, Shared.Err
 	if teamid != "" {
 		if err := Shared.ParseInt(r.Form.Get("teamid"), &q.TeamId); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return []TeamRole{}, Shared.ErrorMsg{Message: "Internal Server Error."}
+			return []TeamRole{}, Shared.ErrorMsg{Message: err.Error()}
 		}
 	}
 	q.Status = r.Form.Get("status")
@@ -48,17 +48,17 @@ func TeamHasRole(w http.ResponseWriter, r *http.Request) ([]TeamRole, Shared.Err
 	offset := q.Limit * q.Page
 
 	var teamRoles []TeamRole
-	fmt.Println(12)
+	// fmt.Println(12)
 	sqlStatement := `SELECT ("Team_Has_Role_Id"),("FirstName"), ("LastName"), ("Team_Id"),("Status"),("CreatedAt"),("UpdatedAt") FROM slh_team_has_role 
 	WHERE ("Status") LIKE ''|| $1 ||'%' 
 	AND ("FirstName") LIKE ''|| $2 ||'%' 
 	AND ("LastName") LIKE ''|| $3 ||'%' 
 	ORDER BY ("CreatedAt") DESC LIMIT $4 OFFSET $5`
 	rows, err := config.Db.Query(sqlStatement, q.Status, q.FirstName, q.LastName, q.Limit, offset)
-	fmt.Println(13)
+	// fmt.Println(13)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return response, Shared.ErrorMsg{Message: "Internal Server Error."}
+		return response, Shared.ErrorMsg{Message: err.Error()}
 	}
 
 	for rows.Next() {
@@ -78,7 +78,7 @@ func TeamHasRole(w http.ResponseWriter, r *http.Request) ([]TeamRole, Shared.Err
 	if err != nil {
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return teamRoles, Shared.ErrorMsg{Message: "Internal Server Error."}
+		return teamRoles, Shared.ErrorMsg{Message: err.Error()}
 	}
 
 	w.Header().Set("Total-Count", strconv.Itoa(cnt))
@@ -112,7 +112,8 @@ func Role_Team(w http.ResponseWriter, r *http.Request) (Roles, ErrorMessage) {
 	roles.Role_Id = 0
 	err = config.Db.QueryRow(sqlStatement, roles.Role_Name, roles.Status).Scan(&roles.Role_Id)
 	if err != nil {
-		return Roles{}, ErrorMessage{Message: "Role_Name already Registered"}
+		w.WriteHeader(http.StatusInternalServerError)
+		return Roles{}, ErrorMessage{Message: err.Error()}
 	}
 
 	return roles, ErrorMessage{}
@@ -131,24 +132,24 @@ func TeamHasRoleUpdate(w http.ResponseWriter, r *http.Request) (RoleUp, ErrorMes
 	row := config.Db.QueryRow(sqlStatement, roles.Role_Name)
 	err = row.Scan(&roles.Role_Id)
 	if err != nil {
-		fmt.Println(1)
-		panic(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return RoleUp{}, Shared.ErrorMsg{Message: err.Error()}
 	}
 
 	sqlStatement = ` UPDATE slh_team_has_role SET "Team_Has_Role_Id" = $1  WHERE ("Team_Id") = $2`
 
 	_, err = config.Db.Exec(sqlStatement, roles.Role_Id, roles.TeamId)
 	if err != nil {
-		fmt.Println(2)
-		panic(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return RoleUp{}}, Shared.ErrorMsg{Message: err.Error()}
 	}
 
 	sqlStatement = ` UPDATE slh_teams SET "Role" = $1  WHERE ("TeamId") = $2`
 
 	_, err = config.Db.Exec(sqlStatement, roles.Role_Name, roles.TeamId)
 	if err != nil {
-		fmt.Println(3)
-		panic(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return RoleUp{}}, Shared.ErrorMsg{Message: err.Error()}
 	}
 
 	return roles, ErrorMessage{}

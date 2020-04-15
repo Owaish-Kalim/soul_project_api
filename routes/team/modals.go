@@ -65,16 +65,17 @@ type StatusResponse struct {
 }
 
 type query struct {
-	Limit     int
-	Page      int
-	TeamId    int
-	FirstName string
-	LastName  string
-	Email     string
-	MobileNo  string
-	Status    string
-	Role      string
-	Address   string
+	Limit        int
+	Page         int
+	TeamId       int
+	FirstName    string
+	LastName     string
+	Email        string
+	MobileNo     string
+	Status       string
+	Role         string
+	Address      string
+	Joining_Date string
 }
 
 type ErrorMessage struct {

@@ -18,6 +18,7 @@ func CreateTemp(w http.ResponseWriter, r *http.Request) (Temp, Shared.ErrorMessa
 
 	err := json.NewDecoder(r.Body).Decode(&temp)
 	if err != nil {
+		return temp, Shared.ErrorMessage{Message: err.Error()}
 		panic(err)
 	}
 
@@ -42,7 +43,7 @@ func CreateTemp(w http.ResponseWriter, r *http.Request) (Temp, Shared.ErrorMessa
 	err = config.Db.QueryRow(sqlStatement, temp.Templ_type, temp.Trigger_time, temp.Trigger_for, temp.SMS_content, temp.Email_content, temp.Subject).Scan(&temp.Templ_id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return temp, Shared.ErrorMessage{Message: "Internal Server Error."}
+		return temp, Shared.ErrorMessage{Message: err.Error()}
 	}
 
 	return temp, Shared.ErrorMessage{Message: ""}
@@ -58,7 +59,7 @@ func ListCom(w http.ResponseWriter, r *http.Request) ([]Temp, Shared.ErrorMessag
 	if err != nil {
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return []Temp{}, Shared.ErrorMessage{Message: "Internal Server Error."}
+		return []Temp{}, Shared.ErrorMessage{Message: err.Error()}
 	}
 
 	// fmt.Println(len(rows))

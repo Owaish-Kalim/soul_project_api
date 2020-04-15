@@ -144,7 +144,7 @@ func CustomerTransaction(w http.ResponseWriter, r *http.Request) (CustomerTran, 
 	fmt.Println(customer.Customer_Id)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		return CustomerTran{}, ErorMesg{Message: "Unauthorised User"}
+		return CustomerTran{}, ErorMesg{Message: err.Error()}
 	}
 	// fmt.Println(12345678)
 	sqlStatement := `
@@ -161,7 +161,7 @@ func CustomerTransaction(w http.ResponseWriter, r *http.Request) (CustomerTran, 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		//panic(err)
-		return customer, ErorMesg{Message: "Internal Server Error"}
+		return customer, ErorMesg{Message: err.Error()}
 	}
 
 	//Customer_Assign_Partner
@@ -191,7 +191,7 @@ func ViewCustomerTransaction(w http.ResponseWriter, r *http.Request) (CustomerTr
 		&customer.Payment_Gateway_Mode, &customer.Transaction_Mode, &customer.Bank_Type)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return CustomerTran{}, ErrorMessage{Message: "Internal Server Error"}
+		return CustomerTran{}, ErrorMessage{Message: err.Error()}
 	}
 	return customer, ErrorMessage{}
 }
@@ -205,7 +205,7 @@ func ListCustomerTransaction(w http.ResponseWriter, r *http.Request) ([]Customer
 	if limit != "" {
 		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return []CustomerTran{}, ErrorMessage{Message: "Internal Server Error"}
+			return []CustomerTran{}, ErrorMessage{Message: err.Error()}
 		}
 	} else {
 		q.Limit = 10
@@ -214,7 +214,7 @@ func ListCustomerTransaction(w http.ResponseWriter, r *http.Request) ([]Customer
 	if page != "" {
 		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return []CustomerTran{}, ErrorMessage{Message: "Internal Server Error"}
+			return []CustomerTran{}, ErrorMessage{Message: err.Error()}
 		}
 		q.Page = q.Page - 1
 	} else {
@@ -262,7 +262,7 @@ func ListCustomerTransaction(w http.ResponseWriter, r *http.Request) ([]Customer
 		// fmt.Println(12)
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return customers, ErrorMessage{Message: "Internal Server Error."}
+		return customers, ErrorMessage{Message: err.Error()}
 	}
 
 	for rows.Next() {
@@ -296,7 +296,7 @@ func ListCustomerTransaction(w http.ResponseWriter, r *http.Request) ([]Customer
 		// fmt.Println(2398)
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return customers, ErrorMessage{Message: "Internal Server Error."}
+		return customers, ErrorMessage{Message: err.Error()}
 	}
 
 	w.Header().Set("Total-Count", strconv.Itoa(cnt))
@@ -334,7 +334,7 @@ func UpdateCustomerTransaction(w http.ResponseWriter, r *http.Request) (Customer
 	if err != nil {
 		// fmt.Println(22)
 		w.WriteHeader(http.StatusInternalServerError)
-		return CustomerTran{}, ErorMesg{Message: "Internal Server Error"}
+		return CustomerTran{}, ErorMesg{Message: err.Error()}
 	}
 	count, err := res.RowsAffected()
 	if err != nil {
@@ -342,7 +342,7 @@ func UpdateCustomerTransaction(w http.ResponseWriter, r *http.Request) (Customer
 	}
 	if count == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		return CustomerTran{}, ErorMesg{Message: "Unauthorised User"}
+		return CustomerTran{}, ErorMesg{Message: err.Error()}
 	}
 	// BuildResp(&response, customer)
 	return customer, ErorMesg{}

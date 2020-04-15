@@ -7,10 +7,10 @@ import (
 	Shared "soul_api/routes"
 )
 
-func CreateSettings(w http.ResponseWriter, r *http.Request) (Temp, error) {
+func CreateSettings(w http.ResponseWriter, r *http.Request) (Temp, Shared.ErrorMessage) {
 
 	w.Header().Set("Content-Type", "application/json")
-
+	var res Shared.ErrorMessage
 	r.ParseForm()
 	temp := Temp{}
 
@@ -28,7 +28,8 @@ func CreateSettings(w http.ResponseWriter, r *http.Request) (Temp, error) {
 	err = config.Db.QueryRow(sqlStatement, temp.Type, temp.URL, temp.Description, temp.HostName, temp.UserName, temp.Password).Scan(&temp.Souls_Setting_Id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return temp, err
+		res.Message = err.Error()
+		return temp, res
 	}
 
 	return temp, err
@@ -51,7 +52,7 @@ func UpdateSettings(w http.ResponseWriter, r *http.Request) (Temp, Shared.ErrorM
 	if err != nil {
 		panic(err)
 		w.WriteHeader(http.StatusPreconditionFailed)
-		return temp, Shared.ErrorMessage{Message: "INVALID ID"}
+		return temp, Shared.ErrorMessage{Message: err.Error()}
 	}
 
 	return temp, Shared.ErrorMessage{Message: ""}
@@ -66,7 +67,7 @@ func ListSettings(w http.ResponseWriter, r *http.Request) ([]Temp, Shared.ErrorM
 	if err != nil {
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return []Temp{}, Shared.ErrorMessage{Message: "Internal Server Error."}
+		return []Temp{}, Shared.ErrorMessage{Message: err.Error()}
 	}
 
 	// fmt.Println(len(rows))

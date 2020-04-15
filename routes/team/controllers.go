@@ -85,12 +85,13 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	}
 
 	sqlStatement = `
-	INSERT INTO slh_teams ("FirstName","LastName","Email", "Address", "JoiningDate", "CreatedAt", "Password", "MobileNo", "Status", "Role")
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	INSERT INTO slh_teams ("FirstName","LastName","Email", "Address", "JoiningDate", "CreatedAt", "Password", "MobileNo", "Status", "Role", "Gender")
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	RETURNING ("TeamId")`
 
 	team.TeamId = 0
-	err = config.Db.QueryRow(sqlStatement, team.FirstName, team.LastName, team.Email, team.Address, team.Joining_Date, team.CreatedAt, string(hashedPassword), team.MobileNo, team.Status, team.Role).Scan(&team.TeamId)
+	err = config.Db.QueryRow(sqlStatement, team.FirstName, team.LastName, team.Email, team.Address, team.Joining_Date, team.CreatedAt, string(hashedPassword),
+		team.MobileNo, team.Status, team.Role, team.Gender).Scan(&team.TeamId)
 	if err != nil {
 		// panic(err)
 		w.WriteHeader(http.StatusPreconditionFailed)
@@ -139,11 +140,11 @@ func LoginTeam(w http.ResponseWriter, r *http.Request) (LoginResponse, Shared.Er
 	}
 
 	sqlStatement := `SELECT ("TeamId"), ("FirstName"), ("LastName"), ("Email"), ("Password"), ("Address"), ("MobileNo"), ("Status"), 
-	("Role") FROM slh_teams WHERE ("Email")=$1;`
+	("Role"), ("JoiningDate"), ("Gender") FROM slh_teams WHERE ("Email")=$1;`
 	team := Team{}
 	row := config.Db.QueryRow(sqlStatement, client.Email)
 	err = row.Scan(&team.TeamId, &team.FirstName, &team.LastName, &team.Email, &team.Password, &team.Address, &team.MobileNo, &team.Status,
-		&team.Role)
+		&team.Role, &team.Joining_Date, &team.Gender)
 
 	switch err {
 	case sql.ErrNoRows:
@@ -367,6 +368,7 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	q.Email = r.Form.Get("email")
 	q.MobileNo = r.Form.Get("mobileno")
 	q.Status = r.Form.Get("status")
+	q.Joining_Date = r.Form.Get("joining_date")
 
 	fmt.Println(q)
 	offset := q.Limit * q.Page
@@ -380,8 +382,9 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 	AND ("Email") ILIKE '' ||$4|| '%'  
 	AND ("MobileNo") ILIKE '' ||$5|| '%' 
 	AND ("Status") ILIKE ''|| $6 ||'%' 
-	ORDER BY ("CreatedAt") DESC LIMIT $7 OFFSET $8`
-	rows, err := config.Db.Query(sqlStatement, q.TeamId, q.FirstName, q.LastName, q.Email, q.MobileNo, q.Status, q.Limit, offset)
+	AND ("JoiningDate") ILIKE ''|| $7 ||'%' 
+	ORDER BY ("CreatedAt") DESC LIMIT $8 OFFSET $9`
+	rows, err := config.Db.Query(sqlStatement, q.TeamId, q.FirstName, q.LastName, q.Email, q.MobileNo, q.Status, q.Joining_Date, q.Limit, offset)
 	// fmt.Println(rows)
 	if err != nil {
 		// panic(err)
@@ -399,9 +402,15 @@ func ListTeam(w http.ResponseWriter, r *http.Request) ([]Response, Shared.ErrorM
 		// cnt = cnt + 1
 	}
 
-	sqlStatement = `SELECT COUNT(*) FROM slh_teams WHERE ("TeamId")=$1 OR ("FirstName") LIKE ''|| $2 ||'%' AND ("LastName") LIKE '' || $3 || '%' AND 
-	("Email") LIKE '' ||$4|| '%' AND ("MobileNo") LIKE '' ||$5|| '%' AND ("Status") LIKE ''|| $6 ||'%'`
-	cntRow := config.Db.QueryRow(sqlStatement, q.TeamId, q.FirstName, q.LastName, q.Email, q.MobileNo, q.Status)
+	sqlStatement = `SELECT COUNT(*) FROM slh_teams 
+	WHERE ("TeamId")::text ilike  ''|| $1 ||'%'
+	OR ("FirstName") ILIKE ''|| $2 ||'%' 
+	AND ("LastName") ILIKE '' || $3 || '%' 
+	AND ("Email") ILIKE '' ||$4|| '%'  
+	AND ("MobileNo") ILIKE '' ||$5|| '%' 
+	AND ("Status") ILIKE ''|| $6 ||'%' 
+	AND ("JoiningDate") ILIKE ''|| $7 ||'%'`
+	cntRow := config.Db.QueryRow(sqlStatement, q.TeamId, q.FirstName, q.LastName, q.Email, q.MobileNo, q.Status, q.Joining_Date)
 	cnt := 0
 	err = cntRow.Scan(&cnt)
 	if err != nil {

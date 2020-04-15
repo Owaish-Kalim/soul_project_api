@@ -80,9 +80,9 @@ func AddCustomer(w http.ResponseWriter, r *http.Request) (Customer, ErrorMsg) {
 		_, err = config.Db.Exec(sqlStatement, customer.Customer_Name, customer.Customer_Email, customer.Customer_Address, customer.Pincode,
 			customer.Customer_Gender, customer.Last_Access_Time, customer.Customer_Mobile_No)
 		if err != nil {
-			fmt.Println(32)
+			// fmt.Println(32)
 			w.WriteHeader(http.StatusInternalServerError)
-			return customer, ErrorMsg{Message: "Internal Server Error"}
+			return customer, ErrorMsg{Message: err.Error()}
 		}
 
 		sqlStatements := `SELECT ("Customer_Id"), ("Customer_Souls_Id"), ("CreatedAt") FROM slh_customers WHERE ("Customer_Mobile_No")=$1`
@@ -91,7 +91,7 @@ func AddCustomer(w http.ResponseWriter, r *http.Request) (Customer, ErrorMsg) {
 		if err != nil {
 			fmt.Println(32)
 			w.WriteHeader(http.StatusInternalServerError)
-			return customer, ErrorMsg{Message: "Internal Server Error"}
+			return customer, ErrorMsg{Message: err.Error()}
 		}
 		fmt.Println(32)
 		return customer, ErrorMsg{}
@@ -103,7 +103,7 @@ func AddCustomer(w http.ResponseWriter, r *http.Request) (Customer, ErrorMsg) {
 	_, err = config.Db.Exec(sqlStatement, customer.Customer_Souls_Id, customer.Customer_Id)
 	if err != nil {
 
-		return Customer{}, ErrorMsg{Message: "Internal Server Error."}
+		return Customer{}, ErrorMsg{Message: err.Error()}
 	}
 	return customer, ErrorMsg{}
 }
@@ -123,7 +123,7 @@ func ViewCustomer(w http.ResponseWriter, r *http.Request) (Customer, ErrorMessag
 	if err != nil {
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return Customer{}, ErrorMessage{Message: "Internal Server Error"}
+		return Customer{}, ErrorMessage{Message: err.Error()}
 	}
 	return customer, ErrorMessage{}
 }
@@ -150,7 +150,7 @@ func UpdateCustomer(w http.ResponseWriter, r *http.Request) (CustomerUpd, ErrorM
 	if err != nil {
 		fmt.Println(22)
 		w.WriteHeader(http.StatusNotFound)
-		return CustomerUpd{}, ErrorMessage{Message: "Mobile_Number already registered"}
+		return CustomerUpd{}, ErrorMessage{Message: err.Error()}
 	}
 	count, err := res.RowsAffected()
 	if err != nil {
@@ -158,7 +158,7 @@ func UpdateCustomer(w http.ResponseWriter, r *http.Request) (CustomerUpd, ErrorM
 	}
 	if count == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		return CustomerUpd{}, ErrorMessage{Message: "Unauthorised User"}
+		return CustomerUpd{}, ErrorMessage{Message: err.Error()}
 	}
 	BuildRespons(&response, customer)
 	return response, ErrorMessage{}
@@ -172,7 +172,7 @@ func ListCustomer(w http.ResponseWriter, r *http.Request) ([]Customer, ErrorMess
 	if limit != "" {
 		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return []Customer{}, ErrorMessage{Message: "Internal Server Error"}
+			return []Customer{}, ErrorMessage{Message: err.Error()}
 		}
 	} else {
 		q.Limit = 10
@@ -181,7 +181,7 @@ func ListCustomer(w http.ResponseWriter, r *http.Request) ([]Customer, ErrorMess
 	if page != "" {
 		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return []Customer{}, ErrorMessage{Message: "Internal Server Error"}
+			return []Customer{}, ErrorMessage{Message: err.Error()}
 		}
 		q.Page = q.Page - 1
 	} else {
@@ -218,7 +218,7 @@ func ListCustomer(w http.ResponseWriter, r *http.Request) ([]Customer, ErrorMess
 		fmt.Print("asfafs")
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return customers, ErrorMessage{Message: "Internal Server Error."}
+		return customers, ErrorMessage{Message: err.Error()}
 	}
 	// fmt.Print("ASHS")
 	// fmt.Println(len(rows))
@@ -247,7 +247,7 @@ func ListCustomer(w http.ResponseWriter, r *http.Request) ([]Customer, ErrorMess
 		// fmt.Println(232)
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return customers, ErrorMessage{Message: "Internal Server Error."}
+		return customers, ErrorMessage{Message: err.Error()}
 	}
 
 	w.Header().Set("Total-Count", strconv.Itoa(cnt))
