@@ -7,8 +7,12 @@ import (
 	"github.com/gorilla/context"
 	"soul_api/middleware"
 	"soul_api/config"
-	// "soul_api/routes"
+	"github.com/gorilla/websocket"
+	// "time"
 )
+
+
+var upgrader = websocket.Upgrader{}
 
 func Create(w http.ResponseWriter, r *http.Request) {
 
@@ -64,6 +68,55 @@ func List(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(userEmail)
 
 }
+
+// func Socket(w http.ResponseWriter, r *http.Request) {
+// 	fmt.Println(r.Method)
+// 	var conn, _ = upgrader.Upgrade(w, r, nil)
+// 	fmt.Println("DOESIT")
+// 	go func(conn *websocket.Conn) {
+// 		for {
+// 			_, _, err := conn.ReadMessage()
+// 			if err != nil {
+// 				conn.Close()
+// 			}
+// 		}
+// 	}(conn)
+// 	fmt.Println("DOESIT")
+// 	// go func(conn *websocket.Conn) {
+// 	// 	// ch := time.Tick(5 * time.Second)
+
+// 	// 	// for range ch {
+// 	// 		fmt.Println("DOESIT")
+// 	// 		conn.WriteJSON(SocketResponse{
+// 	// 			Name: "Ashish",
+// 	// 			Email: "aks@a.aaa",
+// 	// 		})	
+// 	// 	// }
+// 	// }(conn)
+// 	go ResponseSocket(conn)
+
+
+// 	fmt.Println("DOESIT")
+
+
+// 	 // userEmail := context.Get(r, middleware.Decoded)
+	 
+	 
+
+
+// 	// fmt.Println(userEmail)
+
+// }
+
+
+
+
+
+
+
+
+
+
 
 func Update(w http.ResponseWriter, r *http.Request) {
 

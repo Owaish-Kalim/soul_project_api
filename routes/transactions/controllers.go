@@ -9,13 +9,17 @@ import (
 	"soul_api/email"
 	Shared "soul_api/routes"
 	"strconv"
-	"github.com/gorilla/websocket"
+
 	// "time"
 	"math"
+	"github.com/gorilla/websocket"
+	"time"
 )
-
 var upgrader = websocket.Upgrader{}
 
+var Updated = false
+
+// var data SocketResponse
 
 func hsin(theta float64) float64 {
 	return math.Pow(math.Sin(theta/2), 2)
@@ -46,7 +50,7 @@ func Assign(MTId string) CustomerPartner {
 	row := config.Db.QueryRow(sqlStatement, MTId)
 	err := row.Scan(&temp.Cust_Lat, &temp.Cust_Long, &Number_Of_Therapists)
 	if err != nil {
-		fmt.Print("asfafs")
+		fmt.Print("HOLSS")
 		panic(err)
 	}
 	Lat1, _ := strconv.ParseFloat(temp.Cust_Lat, 8)
@@ -56,7 +60,7 @@ func Assign(MTId string) CustomerPartner {
 	sqlStatement = `SELECT ("Latitude"), ("Longitude"), ("Partner_Souls_Id") FROM slh_partners  WHERE 1=1 ;`
 	rows, err := config.Db.Query(sqlStatement)
 	if err != nil {
-		fmt.Print("asfafs")
+		fmt.Print("asfafFFs")
 		panic(err)
 	}
 
@@ -87,7 +91,7 @@ func Assign(MTId string) CustomerPartner {
 		row = config.Db.QueryRow(sqlStatement, partners[i].Souls_Id)
 		err = row.Scan(&cust_part.Partner_Name, &cust_part.Partner_Email)
 		if err != nil {
-			fmt.Print("asfafs")
+			fmt.Print("LOLA")
 			panic(err)
 		}
 
@@ -104,13 +108,13 @@ func Assign(MTId string) CustomerPartner {
 
 	}
 
-	sqlStatement = `SELECT ("Partner_Name"), ("Partner_Mobile_No") FROM slh_partners  WHERE ("Partner_Souls_Id")=$1; `
-	row = config.Db.QueryRow(sqlStatement, cust_part.Partner_Souls_Id)
-	err = row.Scan(&cust_part.Partner_Name, &cust_part.Partner_Mobile_No)
-	if err != nil {
-		fmt.Print("asfafs")
-		panic(err)
-	}
+	// sqlStatement = `SELECT ("Partner_Name"), ("Partner_Mobile_No") FROM slh_partners  WHERE ("Partner_Souls_Id")=$1; `
+	// row = config.Db.QueryRow(sqlStatement, cust_part.Partner_Souls_Id)
+	// err = row.Scan(&cust_part.Partner_Name, &cust_part.Partner_Mobile_No)
+	// if err != nil {
+	// 	fmt.Print("KOLA")
+	// 	panic(err)
+	// }
 
 	cust_part.Slot_Date = "14-04-2020"
 	cust_part.Slot_Time = "1 PM"
@@ -120,12 +124,61 @@ func Assign(MTId string) CustomerPartner {
 
 }
 
+
+
+
+
+func Socket(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.Method)
+	var conn, _ = upgrader.Upgrade(w, r, nil)
+	fmt.Println("SOCKET START")
+	go func(conn *websocket.Conn) {
+		for {
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				conn.Close()
+			}
+		}
+	}(conn)
+	fmt.Println("SOCKET MID")
+	go func(conn *websocket.Conn) {
+		ch := time.Tick(5 * time.Second)
+		fmt.Println("DOESIT")
+		for range ch {
+			if Updated != false {
+				conn.WriteJSON(SocketResponse{
+					Name: "Ashish",
+					Email: "aks@a.aaa",
+				})
+				Updated = false
+			}
+				
+		}
+	}(conn)
+
+	fmt.Println("SOCKET END")
+
+
+	 // userEmail := context.Get(r, middleware.Decoded)
+	 
+	 
+
+
+	// fmt.Println(userEmail)
+
+}
+
+
+
+
 func CustomerTransaction(w http.ResponseWriter, r *http.Request) (CustomerTran, ErorMesg) {
+	
 	r.ParseForm()
 
 	customer := CustomerTran{}
 	err := json.NewDecoder(r.Body).Decode(&customer)
 	if err != nil {
+		fmt.Println("HERE")
 		panic(err)
 	}
 
@@ -170,21 +223,7 @@ func CustomerTransaction(w http.ResponseWriter, r *http.Request) (CustomerTran, 
 
 	// NOTIFICATION
 
-	var conn, _ = upgrader.Upgrade(w, r, nil)
-	go func(conn *websocket.Conn) {
-		for {
-			_, _, err := conn.ReadMessage()
-			if err != nil {
-				conn.Close()
-			}
-		}
-	}(conn)
-
-	go func(conn *websocket.Conn) {
-		// ch := time.Tick(5 * time.Second)
-			conn.WriteJSON(customer)
-	}(conn)
-
+	Updated=true
 
 	//Customer_Assign_Partner
 	Assign(customer.Merchant_Transaction_Id)

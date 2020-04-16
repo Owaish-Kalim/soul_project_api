@@ -3,6 +3,8 @@ package transactions
 import (
 	"encoding/json"
 	"net/http"
+	"fmt"
+	// "soul_api/routes/users"
 )
 
 func Create(w http.ResponseWriter, r *http.Request) {
@@ -19,7 +21,8 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(err)
 		return
 	}
-
+	fmt.Println("COOLSNE")
+	fmt.Println("COOL")
 	// w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(customer)
 }

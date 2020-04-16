@@ -30,6 +30,7 @@ func main() {
 	r.HandleFunc("/api/users/update", middleware.ValidateTokenMiddleware(users.Update)).Methods("PUT")
 	r.HandleFunc("/api/users/delete", middleware.ValidateTokenMiddleware(users.Delete)).Methods("DELETE")
 	r.HandleFunc("/api/users/login", users.Login).Methods("POST")
+	r.HandleFunc("/customer/transaction/socket", transactions.Socket).Methods("GET")
 
 	r.HandleFunc("/team/login", team.Login).Methods("POST")
 	r.HandleFunc("/team/list", middleware.ValidateTokenMiddleware(team.List)).Methods("GET")

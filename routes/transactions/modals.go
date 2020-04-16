@@ -9,6 +9,11 @@ type Partner struct {
 	Dis      float64
 }
 
+type SocketResponse struct {
+	Name string `json:"name"`
+	Email string `json: "email"`
+}
+
 type CustomerTran struct {
 	Customer_Name           string `json:"customer_name"`
 	Customer_Order_Id       int    `json:"order_id"`

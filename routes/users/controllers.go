@@ -14,6 +14,7 @@ import (
 	"soul_api/routes"
 )
 
+
 func CreateUser(w http.ResponseWriter, r *http.Request) (User, error) {
 
 	w.Header().Set("Content-Type", "application/json")

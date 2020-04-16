@@ -14,3 +14,4 @@ type User struct {
 	UpdatedAt time.Time
 	Token 	string `json:"token"`
 }
+
