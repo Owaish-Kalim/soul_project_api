@@ -9,10 +9,13 @@ import (
 	"soul_api/email"
 	Shared "soul_api/routes"
 	"strconv"
-
+	"github.com/gorilla/websocket"
 	// "time"
 	"math"
 )
+
+var upgrader = websocket.Upgrader{}
+
 
 func hsin(theta float64) float64 {
 	return math.Pow(math.Sin(theta/2), 2)
@@ -164,8 +167,26 @@ func CustomerTransaction(w http.ResponseWriter, r *http.Request) (CustomerTran, 
 		return customer, ErorMesg{Message: err.Error()}
 	}
 
-	//Customer_Assign_Partner
 
+	// NOTIFICATION
+
+	var conn, _ = upgrader.Upgrade(w, r, nil)
+	go func(conn *websocket.Conn) {
+		for {
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				conn.Close()
+			}
+		}
+	}(conn)
+
+	go func(conn *websocket.Conn) {
+		// ch := time.Tick(5 * time.Second)
+			conn.WriteJSON(customer)
+	}(conn)
+
+
+	//Customer_Assign_Partner
 	Assign(customer.Merchant_Transaction_Id)
 
 	return customer, ErorMesg{}
