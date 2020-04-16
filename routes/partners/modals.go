@@ -13,10 +13,10 @@ type Partner struct {
 	Partner_Address  string `json:"partner_address"`
 	Pincode          string `json:"pincode"`
 	Latitude         string `json:"latitude"`
-	Longitude        string `"json:longitude"`
-	Rate             string `"json:"rate,string"`
-	Commission_Type  string `"json:"commission_type"`
-	Onboard_Date     string `json:"onborad_date"`
+	Longitude        string `json:"longitude"`
+	Rate             string `json:"rate"`
+	Commission_Type  string `json:"commission_type"`
+	Onboard_Date     string `json:"onboard_date"`
 	UpdatedAt        string `json:"updated_at"`
 	CreatedAt        string `json:"created_at"`
 	CreatedBy        string `json:"created_by"`
@@ -52,12 +52,18 @@ type UpResponse struct {
 }
 
 type query struct {
-	Limit          int
-	Page           int
-	Partner_Name   string `json:"partner_name"`
-	Partner_Email  string `json:"partner_email"`
-	UpdatedBy      string `json:"updated_by"`
-	Partner_Gender string `json:"partner_gender"`
+	Limit            int
+	Page             int
+	Partner_Name     string `json:"partner_name"`
+	Partner_Email    string `json:"partner_email"`
+	Partner_Gender   string `json:"partner_gender"`
+	Partner_Souls_Id string `json:"partner_souls_id"`
+	Partner_MobileNo string `json:"partner_mobileno"`
+	Pincode          string `json:"pincode"`
+	Rate             string `json:"rate"`
+	Commission_Type  string `json:"commission_type"`
+	UpdatedAt        string `json:"updated_at"`
+	CreatedAt        string `json:"created_at"`
 }
 
 func CheckEmpty(partner Partner, res *ErrPartner) {

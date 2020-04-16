@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 	"soul_api/config"
@@ -489,4 +490,58 @@ func TeamLogout(w http.ResponseWriter, r *http.Request) Shared.ErrorMessage {
 		return Shared.ErrorMessage{Message: err.Error()}
 	}
 	return Shared.ErrorMessage{Message: "Successfully Logout"}
+}
+
+func UploadImage(w http.ResponseWriter, req *http.Request) (ImgResp, Shared.ErrorMessage) {
+
+	resp := ImgResp{}
+	req.ParseMultipartForm(2 * 1024 * 1024)
+
+	fmt.Println(req.FormValue("email"))
+	file, handler, err := req.FormFile("myfile")
+	if err != nil {
+		panic(err)
+		return resp, Shared.ErrorMessage{Message: err.Error()}
+	}
+	defer file.Close()
+	fmt.Println("File info")
+	fmt.Println("File Name: ", handler.Filename)
+	// fmt.Println("File Size: ",handler.Size())
+	fmt.Println("File Type: ", handler.Header.Get("Content-Type"))
+
+	fmt.Println(req.FormValue("email"))
+
+	if handler.Header.Get("Content-Type") != "image/jpeg" {
+		fmt.Println("Upload jpeg image")
+		return resp, Shared.ErrorMessage{Message: "Upload jpg image"}
+	}
+
+	fmt.Println(handler.Header)
+	tempFile, err2 := ioutil.TempFile("uploads", "upload-*.jpg")
+
+	if err2 != nil {
+		return resp, Shared.ErrorMessage{Message: err.Error()}
+	}
+	fmt.Println(3)
+	defer tempFile.Close()
+
+	fileBytes, err3 := ioutil.ReadAll(file)
+	if err3 != nil {
+		return resp, Shared.ErrorMessage{Message: err.Error()}
+	}
+	tempFile.Write(fileBytes)
+	fmt.Println(4)
+	resp.Member_Image = handler.Filename
+	fmt.Println(resp.Member_Image)
+	userEmail := req.FormValue("email")
+	fmt.Println(userEmail)
+	sqlStatement := ` UPDATE slh_teams SET "Member_Image" = $1 WHERE ("Email") = $2`
+
+	_, err = config.Db.Exec(sqlStatement, resp.Member_Image, userEmail)
+	if err != nil {
+		panic(err)
+	}
+	w.WriteHeader(http.StatusOK)
+	return resp, Shared.ErrorMessage{Message: ""}
+
 }

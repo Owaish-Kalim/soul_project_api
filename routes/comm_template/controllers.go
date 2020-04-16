@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"soul_api/config"
 	Shared "soul_api/routes"
+	"strconv"
 )
 
 func CreateTemp(w http.ResponseWriter, r *http.Request) (Temp, Shared.ErrorMessage) {
@@ -51,26 +52,104 @@ func CreateTemp(w http.ResponseWriter, r *http.Request) (Temp, Shared.ErrorMessa
 
 func ListCom(w http.ResponseWriter, r *http.Request) ([]Temp, Shared.ErrorMessage) {
 	r.ParseForm()
+	var res Shared.ErrorMessage
+	q := &query{}
+	limit := r.Form.Get("limit")
+	if limit != "" {
+		if err := Shared.ParseInt(r.Form.Get("limit"), &q.Limit); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			res.Message = err.Error()
+			return []Temp{}, res
+		}
+	} else {
+		q.Limit = 10
+	}
+	page := r.Form.Get("page")
+	if page != "" {
+		if err := Shared.ParseInt(r.Form.Get("page"), &q.Page); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			res.Message = err.Error()
+			return []Temp{}, res
+		}
+		q.Page = q.Page - 1
+	} else {
+		q.Page = 0
+	}
+	templ_id := r.Form.Get("templ_id")
+	if templ_id != "" {
+		if err := Shared.ParseInt(r.Form.Get("templ_id"), &q.Templ_id); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			res.Message = err.Error()
+			return []Temp{}, res
+		}
+	}
 
+	q.Templ_type = r.Form.Get("templ_type")
+	q.Trigger_time = r.Form.Get("trigger_time")
+	q.Trigger_for = r.Form.Get("trigger_for")
+	q.SMS_content = r.Form.Get("sms_content")
+	q.Subject = r.Form.Get("subject")
+	q.Email_content = r.Form.Get("email_content")
+	q.Status = r.Form.Get("status")
+
+	// fmt.Println(q)
+	offset := q.Limit * q.Page
+
+	var temps []Temp
 	sqlStatement := `SELECT ("Comm.Template_Id"),("Comm.Template_Type"),("Trigger_Time"),("Trigger_For"), ("SMS_Content"),("Email_Content"), 
-	("Subject"),("Status") FROM slh_communication_templates WHERE 1=1 ;`
-	rows, err := config.Db.Query(sqlStatement)
-	// fmt.Println(rows)
+	("Subject"),("Status") FROM slh_communication_templates 
+	WHERE ("Comm.Template_Id")::text ilike  ''|| $1 ||'%'
+	OR ("Comm.Template_Type") ILIKE ''|| $2 ||'%' 
+	AND ("Trigger_For") ILIKE '' || $3 || '%' 
+	AND ("SMS_Content") ILIKE '' ||$4|| '%'  
+	AND ("Email_Content") ILIKE '' ||$5|| '%' 
+	AND ("Subject") ILIKE ''|| $6 ||'%' 
+	AND ("Trigger_Time") ILIKE ''|| $7 ||'%' 
+	AND ("Status") ILIKE ''|| $8 ||'%' 
+	ORDER BY ("Comm.Template_Id") LIMIT $9 OFFSET $10`
+	rows, err := config.Db.Query(sqlStatement, q.Templ_id, q.Templ_type, q.Trigger_for, q.SMS_content, q.Email_content, q.Subject, q.Trigger_time,
+		q.Status, q.Limit, offset)
+	fmt.Println(12)
 	if err != nil {
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return []Temp{}, Shared.ErrorMessage{Message: err.Error()}
+		return temps, Shared.ErrorMessage{Message: err.Error()}
 	}
+	fmt.Println(12)
 
-	// fmt.Println(len(rows))
-	var temps []Temp
 	for rows.Next() {
 		var temp = Temp{}
-		// fmt.Println(100)
 		rows.Scan(&temp.Templ_id, &temp.Templ_type, &temp.Trigger_time, &temp.Trigger_for, &temp.SMS_content, &temp.Email_content, &temp.Subject, &temp.Status)
 		temps = append(temps, temp)
-		// cnt = cnt + 1
 	}
+
+	sqlStatement = `SELECT COUNT(*) FROM slh_communication_templates  
+	WHERE ("Comm.Template_Id")::text ilike  ''|| $1 ||'%'
+	OR ("Comm.Template_Type") ILIKE ''|| $2 ||'%' 
+	AND ("Trigger_For") ILIKE '' || $3 || '%' 
+	AND ("SMS_Content") ILIKE '' ||$4|| '%'  
+	AND ("Email_Content") ILIKE '' ||$5|| '%' 
+	AND ("Subject") ILIKE ''|| $6 ||'%' 
+	AND ("Trigger_Time") ILIKE ''|| $7 ||'%' 
+	AND ("Status") ILIKE ''|| $8 ||'%' `
+	cntRow := config.Db.QueryRow(sqlStatement, q.Templ_id, q.Templ_type, q.Trigger_for, q.SMS_content, q.Email_content, q.Subject, q.Trigger_time,
+		q.Status)
+	cnt := 0
+	err = cntRow.Scan(&cnt)
+	if err != nil {
+		// panic(err)
+		fmt.Println(12)
+		w.WriteHeader(http.StatusInternalServerError)
+		return temps, Shared.ErrorMessage{Message: err.Error()}
+	}
+	fmt.Println(12)
+	w.Header().Set("Total-Count", strconv.Itoa(cnt))
+	totalPages := cnt / q.Limit
+	if cnt%q.Limit != 0 {
+		totalPages = totalPages + 1
+	}
+
+	w.Header().Set("Total-Pages", strconv.Itoa(totalPages))
 
 	return temps, Shared.ErrorMessage{Message: ""}
 }

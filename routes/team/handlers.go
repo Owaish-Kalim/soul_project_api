@@ -132,3 +132,17 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func Upload(w http.ResponseWriter, req *http.Request) {
+	if req.Method != "POST" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+	image, err := UploadImage(w, req)
+	if err.Message != "" {
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+	json.NewEncoder(w).Encode(image)
+
+}
