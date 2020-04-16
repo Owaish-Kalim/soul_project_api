@@ -19,7 +19,7 @@ var upgrader = websocket.Upgrader{}
 
 var Updated = false
 
-// var data SocketResponse
+var SocketResponseData SocketResponse
 
 func hsin(theta float64) float64 {
 	return math.Pow(math.Sin(theta/2), 2)
@@ -130,6 +130,7 @@ func Assign(MTId string) CustomerPartner {
 
 func Socket(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r.Method)
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	var conn, _ = upgrader.Upgrade(w, r, nil)
 	fmt.Println("SOCKET START")
 	go func(conn *websocket.Conn) {
@@ -146,10 +147,7 @@ func Socket(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("DOESIT")
 		for range ch {
 			if Updated != false {
-				conn.WriteJSON(SocketResponse{
-					Name: "Ashish",
-					Email: "aks@a.aaa",
-				})
+				conn.WriteJSON(SocketResponseData)
 				Updated = false
 			}
 				
@@ -224,6 +222,9 @@ func CustomerTransaction(w http.ResponseWriter, r *http.Request) (CustomerTran, 
 	// NOTIFICATION
 
 	Updated=true
+	SocketResponseData.Customer_Name = customer.Customer_Name
+	SocketResponseData.Customer_Souls_Id = customer.Customer_Souls_Id
+	SocketResponseData.Merchant_Transaction_Id = customer.Merchant_Transaction_Id
 
 	//Customer_Assign_Partner
 	Assign(customer.Merchant_Transaction_Id)

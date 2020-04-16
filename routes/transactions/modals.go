@@ -10,8 +10,9 @@ type Partner struct {
 }
 
 type SocketResponse struct {
-	Name string `json:"name"`
-	Email string `json: "email"`
+	Customer_Souls_Id string `json:"customer_souls_id"`
+	Merchant_Transaction_Id string `json: "merchant_trans_id"`
+	Customer_Name string `json: "customer_name"`
 }
 
 type CustomerTran struct {
