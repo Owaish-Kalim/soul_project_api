@@ -50,9 +50,9 @@ func TeamHasRole(w http.ResponseWriter, r *http.Request) ([]TeamRole, Shared.Err
 	var teamRoles []TeamRole
 	// fmt.Println(12)
 	sqlStatement := `SELECT ("Team_Has_Role_Id"),("FirstName"), ("LastName"), ("Team_Id"),("Status"),("CreatedAt"),("UpdatedAt") FROM slh_team_has_role 
-	WHERE ("Status") LIKE ''|| $1 ||'%' 
-	AND ("FirstName") LIKE ''|| $2 ||'%' 
-	AND ("LastName") LIKE ''|| $3 ||'%' 
+	WHERE ("Status") ILIKE ''|| $1 ||'%' 
+	AND ("FirstName") ILIKE ''|| $2 ||'%' 
+	AND ("LastName") ILIKE ''|| $3 ||'%' 
 	ORDER BY ("CreatedAt") DESC LIMIT $4 OFFSET $5`
 	rows, err := config.Db.Query(sqlStatement, q.Status, q.FirstName, q.LastName, q.Limit, offset)
 	// fmt.Println(13)

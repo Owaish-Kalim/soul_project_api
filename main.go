@@ -40,6 +40,7 @@ func main() {
 	r.HandleFunc("/team/view-member", middleware.ValidateTokenMiddleware(team.View)).Methods("GET")
 	r.HandleFunc("/team/update-status", middleware.ValidateTokenMiddleware(team.UpdateStatus)).Methods("POST")
 	r.HandleFunc("/team/logout", middleware.ValidateTokenMiddleware(team.Logout)).Methods("GET")
+	r.HandleFunc("/team/upload/image", middleware.ValidateTokenMiddleware(team.Upload)).Methods("POST")
 
 	r.HandleFunc("/team/role", middleware.ValidateTokenMiddleware(teamHasRole.Role)).Methods("POST")
 	r.HandleFunc("/team/has-role/list", middleware.ValidateTokenMiddleware(teamHasRole.HasRole)).Methods("GET")

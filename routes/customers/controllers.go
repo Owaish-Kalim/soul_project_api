@@ -116,10 +116,12 @@ func ViewCustomer(w http.ResponseWriter, r *http.Request) (Customer, ErrorMessag
 		panic(err)
 	}
 	sqlStatement := `SELECT ("Customer_Email"),("CreatedAt"),("Customer_Gender"),("Customer_Name"),("Customer_Address"), ("Registered_Source"),
-	("Last_Access_Time"), ("Customer_Souls_Id"), ("Customer_Mobile_No"), ("Status"), ("Pincode") FROM slh_customers WHERE ("Customer_Id")=$1;`
+	("Last_Access_Time"), ("Customer_Souls_Id"), ("Customer_Mobile_No"), ("Status"), ("Pincode"), ("CreatedAt"), ("Last_Access_Time")
+	FROM slh_customers WHERE ("Customer_Id")=$1;`
 	row := config.Db.QueryRow(sqlStatement, customer.Customer_Id)
 	err = row.Scan(&customer.Customer_Email, &customer.CreatedAt, &customer.Customer_Gender, &customer.Customer_Name, &customer.Customer_Address,
-		&customer.Registered_Source, &customer.Last_Access_Time, &customer.Customer_Souls_Id, &customer.Customer_Mobile_No, &customer.Status, &customer.Pincode)
+		&customer.Registered_Source, &customer.Last_Access_Time, &customer.Customer_Souls_Id, &customer.Customer_Mobile_No, &customer.Status, &customer.Pincode,
+		&customer.CreatedAt, &customer.Last_Access_Time)
 	if err != nil {
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -202,14 +204,14 @@ func ListCustomer(w http.ResponseWriter, r *http.Request) ([]Customer, ErrorMess
 	// fmt.Print("ASHS")
 	var customers []Customer
 	sqlStatement := `SELECT ("Customer_Souls_Id"),("Customer_Name"),("Customer_Mobile_No"),("Status"), ("Customer_Id"), ("Customer_Gender"), ("Pincode"), 
-	("Customer_Email"), ("Customer_Address"), ("Registered_Source") FROM slh_customers 
-	WHERE ("Customer_Souls_Id") LIKE  ''||$1||'%' 
-	AND ("Customer_Name") LIKE ''|| $2 ||'%' 
-	AND ("Customer_Gender") LIKE ''|| $3 ||'%' 
-	AND ("Customer_Email") LIKE ''|| $4 ||'%' 
-	AND ("Customer_Mobile_No") LIKE ''|| $5 ||'%' 
-	AND ("Pincode") LIKE ''|| $6 ||'%' 
-	AND ("Status") LIKE ''|| $7 ||'%' 
+	("Customer_Email"), ("Customer_Address"), ("Registered_Source") , ("CreatedAt"), ("Last_Access_Time") FROM slh_customers 
+	WHERE ("Customer_Souls_Id") ILIKE  ''||$1||'%' 
+	AND ("Customer_Name") ILIKE ''|| $2 ||'%' 
+	AND ("Customer_Gender") ILIKE ''|| $3 ||'%' 
+	AND ("Customer_Email") ILIKE ''|| $4 ||'%' 
+	AND ("Customer_Mobile_No") ILIKE ''|| $5 ||'%' 
+	AND ("Pincode") ILIKE ''|| $6 ||'%' 
+	AND ("Status") ILIKE ''|| $7 ||'%' 
 	ORDER BY ("CreatedAt") DESC LIMIT $8 OFFSET $9`
 	rows, err := config.Db.Query(sqlStatement, q.Customer_Souls_Id, q.Customer_Name, q.Customer_Gender, q.Customer_Email, q.Customer_Mobile_No,
 		q.Pincode, q.Status, q.Limit, offset)
@@ -226,19 +228,19 @@ func ListCustomer(w http.ResponseWriter, r *http.Request) ([]Customer, ErrorMess
 		var customer = Customer{}
 		rows.Scan(&customer.Customer_Souls_Id, &customer.Customer_Name, &customer.Customer_Mobile_No, &customer.Status,
 			&customer.Customer_Id, &customer.Customer_Gender, &customer.Pincode, &customer.Customer_Email, &customer.Customer_Address,
-			&customer.Registered_Source)
+			&customer.Registered_Source, &customer.CreatedAt, &customer.Last_Access_Time)
 		customers = append(customers, customer)
 		// cnt = cnt + 1
 	}
 
 	sqlStatement = `SELECT COUNT(*) FROM slh_customers 
 	WHERE ("Customer_Souls_Id") LIKE  ''||$1||'%' 
-	AND ("Customer_Name") LIKE ''|| $2 ||'%' 
-	AND ("Customer_Gender") LIKE ''|| $3 ||'%' 
-	AND ("Customer_Email") LIKE ''|| $4 ||'%' 
-	AND ("Customer_Mobile_No") LIKE ''|| $5 ||'%' 
-	AND ("Pincode") LIKE ''|| $6 ||'%' 
-	AND ("Status") LIKE ''|| $7 ||'%' `
+	AND ("Customer_Name") ILIKE ''|| $2 ||'%' 
+	AND ("Customer_Gender") ILIKE ''|| $3 ||'%' 
+	AND ("Customer_Email") ILIKE ''|| $4 ||'%' 
+	AND ("Customer_Mobile_No") ILIKE ''|| $5 ||'%' 
+	AND ("Pincode") ILIKE ''|| $6 ||'%' 
+	AND ("Status") ILIKE ''|| $7 ||'%' `
 	cntRow := config.Db.QueryRow(sqlStatement, q.Customer_Souls_Id, q.Customer_Name, q.Customer_Gender, q.Customer_Email, q.Customer_Mobile_No,
 		q.Pincode, q.Status)
 	cnt := 0

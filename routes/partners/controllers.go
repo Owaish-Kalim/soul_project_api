@@ -25,6 +25,7 @@ func CreatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 		// panic(err)
 	}
 
+	fmt.Println(12)
 	res.Message = ""
 	CheckEmpty(partner, &res)
 	if res.Message != "" {
@@ -32,12 +33,15 @@ func CreatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 		return partner, res
 	}
 
+	fmt.Println(12)
+
 	re := regexp.MustCompile(`^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
 	if re.MatchString(partner.Partner_MobileNo) == false {
 		w.WriteHeader(http.StatusPreconditionFailed)
 		res.Message = err.Error()
 		return Partner{}, res
 	}
+	fmt.Println(12)
 
 	curr_time := time.Now()
 	partner.UpdatedAt = curr_time.Format("02-01-2006 3:4:5 PM")
@@ -100,12 +104,15 @@ func UpdatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 	var result Shared.Result
 
 	sqlStatement := `UPDATE slh_partners SET "Partner_Name" = $1, "Partner_Mobile_No" = $2,"Partner_Gender"=$3, "Partner_Address" = $4,
-	"Pincode"=$5,"Latitude"=$6, "Longitude"=$7, "Per_Visit_Price_Commission"=$8,"Commission_Type"=$9,"Last_Updated_By"=$10 WHERE ("Partner_Id") = $11`
+	"Pincode"=$5,"Latitude"=$6, "Longitude"=$7, "Per_Visit_Price_Commission"=$8,"Commission_Type"=$9,"Last_Updated_By"=$10, 
+	"Onboard_Date"=$11,"CreatedBy"=$12 WHERE ("Partner_Email") = $13`
 
 	result, err = config.Db.Exec(sqlStatement, partner.Partner_Name, partner.Partner_MobileNo, partner.Partner_Gender, partner.Partner_Address, partner.Pincode,
-		partner.Latitude, partner.Longitude, partner.Rate, partner.Commission_Type, partner.UpdatedBy, partner.Partner_Id)
+		partner.Latitude, partner.Longitude, partner.Rate, partner.Commission_Type, partner.UpdatedBy, partner.Onboard_Date, partner.CreatedBy, partner.Partner_Email)
 	if err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusNotFound)
+		return Partner{}, ErrPartner{Message: err.Error()}
+		// panic(err)
 	}
 	count, err := result.RowsAffected()
 	if err != nil {
@@ -146,42 +153,65 @@ func ListPartner(w http.ResponseWriter, r *http.Request) ([]Partner, ErrorMessag
 	q.Partner_Name = r.Form.Get("partner_name")
 	q.Partner_Email = r.Form.Get("partner_email")
 	q.Partner_Gender = r.Form.Get("partner_gender")
+	q.Partner_Souls_Id = r.Form.Get("partner_souls_id")
+	q.Partner_MobileNo = r.Form.Get("partner_mobileno")
+	q.Pincode = r.Form.Get("pincode")
+	q.Rate = r.Form.Get("rate")
+	q.Commission_Type = r.Form.Get("commission_type")
+	q.UpdatedAt = r.Form.Get("updated_at")
+	q.CreatedAt = r.Form.Get("created_at")
 
 	offset := q.Limit * q.Page
-	var customers []Partner
+	var partners []Partner
 
-	sqlStatement := `SELECT ("Partner_Id"), ("Partner_Name"),("Partner_Email"), ("Partner_Mobile_No"),("Partner_Address"),("Pincode"),("Latitude") ,
-	("Longitude"),("Per_Visit_Price_Commission"), ("Commission_Type"), ("Onboard_Date"),
-	("UpdatedAt"), ("CreatedAt"),("Last_Updated_By"), ("Partner_Gender") FROM slh_partners
-	WHERE ("Partner_Name") LIKE  ''||$1||'%' 
-	AND ("Partner_Email") LIKE ''|| $2 ||'%' 
-	AND ("Partner_Gender") LIKE ''|| $3 ||'%' 
-	ORDER BY ("CreatedAt") DESC LIMIT $4 OFFSET $5`
+	sqlStatement := `SELECT ("Partner_Id"), ("Partner_Souls_Id"), ("Partner_Name"),("Partner_Email"), ("Partner_Mobile_No"),("Partner_Address"),("Pincode"),
+	("Latitude"), ("Longitude"),("Per_Visit_Price_Commission"), ("Commission_Type"), ("Onboard_Date"),
+	("UpdatedAt"), ("CreatedAt"),("Last_Updated_By"), ("CreatedBy"), ("Partner_Gender") FROM slh_partners
+	WHERE ("Partner_Name") ILIKE  ''||$1||'%' 
+	AND ("Partner_Email") ILIKE ''|| $2 ||'%' 
+	AND ("Partner_Gender") ILIKE ''|| $3 ||'%' 
+	AND ("Partner_Souls_Id") ILIKE ''|| $4 ||'%' 
+	AND ("Partner_Mobile_No") ILIKE ''|| $5 ||'%' 
+	AND ("Pincode") ILIKE ''|| $6 ||'%' 
+	AND ("Per_Visit_Price_Commission") ILIKE ''|| $7 ||'%' 
+	AND ("Commission_Type") ILIKE ''|| $8 ||'%' 
+	AND ("UpdatedAt") ILIKE ''|| $9 ||'%'
+	AND ("CreatedAt") ILIKE ''|| $10 ||'%' 
+	ORDER BY ("CreatedAt") DESC LIMIT $11 OFFSET $12`
 
-	rows, err := config.Db.Query(sqlStatement, q.Partner_Name, q.Partner_Email, q.Partner_Gender, q.Limit, offset)
+	rows, err := config.Db.Query(sqlStatement, q.Partner_Name, q.Partner_Email, q.Partner_Gender, q.Partner_Souls_Id, q.Partner_MobileNo, q.Pincode,
+		q.Rate, q.Commission_Type, q.UpdatedAt, q.CreatedAt, q.Limit, offset)
 
 	if err != nil {
 		// fmt.Print("asfafs")
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return customers, ErrorMessage{Message: err.Error()}
+		return partners, ErrorMessage{Message: err.Error()}
 	}
 
 	for rows.Next() {
-		customer := Partner{}
-		rows.Scan(&customer.Partner_Id, &customer.Partner_Name, &customer.Partner_Email,
-			&customer.Partner_MobileNo, &customer.Partner_Address, &customer.Pincode, &customer.Latitude, &customer.Longitude,
-			&customer.Rate, &customer.Commission_Type, &customer.Onboard_Date, &customer.UpdatedAt, &customer.CreatedAt,
-			&customer.UpdatedBy, &customer.Partner_Gender)
-		customers = append(customers, customer)
+		partner := Partner{}
+		rows.Scan(&partner.Partner_Id, &partner.Partner_Souls_Id, &partner.Partner_Name, &partner.Partner_Email,
+			&partner.Partner_MobileNo, &partner.Partner_Address, &partner.Pincode, &partner.Latitude, &partner.Longitude,
+			&partner.Rate, &partner.Commission_Type, &partner.Onboard_Date, &partner.UpdatedAt, &partner.CreatedAt,
+			&partner.UpdatedBy, &partner.CreatedBy, &partner.Partner_Gender)
+		partners = append(partners, partner)
 		// cnt = cnt + 1
 	}
 
 	sqlStatement = `SELECT COUNT(*) FROM slh_partners
-	WHERE ("Partner_Name") LIKE  ''||$1||'%' 
-	AND ("Partner_Email") LIKE ''|| $2 ||'%' 
-	AND ("Partner_Gender") LIKE ''|| $3 ||'%'`
-	cntRow := config.Db.QueryRow(sqlStatement, q.Partner_Name, q.Partner_Email, q.Partner_Gender)
+	WHERE ("Partner_Name") ILIKE  ''||$1||'%' 
+	AND ("Partner_Email") ILIKE ''|| $2 ||'%' 
+	AND ("Partner_Gender") ILIKE ''|| $3 ||'%' 
+	AND ("Partner_Souls_Id") ILIKE ''|| $4 ||'%' 
+	AND ("Partner_Mobile_No") ILIKE ''|| $5 ||'%' 
+	AND ("Pincode") ILIKE ''|| $6 ||'%' 
+	AND ("Per_Visit_Price_Commission") ILIKE ''|| $7 ||'%' 
+	AND ("Commission_Type") ILIKE ''|| $8 ||'%' 
+	AND ("UpdatedAt") ILIKE ''|| $9 ||'%'
+	AND ("CreatedAt") ILIKE ''|| $10 ||'%'`
+	cntRow := config.Db.QueryRow(sqlStatement, q.Partner_Name, q.Partner_Email, q.Partner_Gender, q.Partner_Souls_Id, q.Partner_MobileNo, q.Pincode,
+		q.Rate, q.Commission_Type, q.UpdatedAt, q.CreatedAt)
 	cnt := 0
 	err = cntRow.Scan(&cnt)
 	if err != nil {
@@ -189,7 +219,7 @@ func ListPartner(w http.ResponseWriter, r *http.Request) ([]Partner, ErrorMessag
 		// fmt.Println(4747)
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return customers, ErrorMessage{Message: err.Error()}
+		return partners, ErrorMessage{Message: err.Error()}
 	}
 
 	w.Header().Set("Total-Count", strconv.Itoa(cnt))
@@ -200,6 +230,6 @@ func ListPartner(w http.ResponseWriter, r *http.Request) ([]Partner, ErrorMessag
 
 	w.Header().Set("Total-Pages", strconv.Itoa(totalPages))
 
-	fmt.Println(cnt)
-	return customers, ErrorMessage{Message: ""}
+	// fmt.Println(cnt)
+	return partners, ErrorMessage{Message: ""}
 }

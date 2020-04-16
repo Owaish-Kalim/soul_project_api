@@ -92,6 +92,11 @@ type TeamRole struct {
 	LastName         string `json:"last_name"`
 }
 
+type ImgResp struct {
+	Email        string `json:"email"`
+	Member_Image string `json:"member_image"`
+}
+
 func BuildResponse(response *Response, team Team) Response {
 	response.TeamId = team.TeamId
 	response.FirstName = team.FirstName

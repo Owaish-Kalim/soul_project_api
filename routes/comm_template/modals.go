@@ -10,3 +10,16 @@ type Temp struct {
 	Email_content string `json:"email_content"`
 	Status        string `json:"status"`
 }
+
+type query struct {
+	Limit         int
+	Page          int
+	Templ_id      int
+	Templ_type    string
+	Trigger_time  string
+	Trigger_for   string
+	SMS_content   string
+	Subject       string
+	Email_content string
+	Status        string
+}

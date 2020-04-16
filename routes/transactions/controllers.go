@@ -134,6 +134,8 @@ func CustomerTransaction(w http.ResponseWriter, r *http.Request) (CustomerTran, 
 		return customer, res
 	}
 
+	fmt.Println(12)
+
 	sqlStatements := `SELECT ("Customer_Order_Id"), ("Customer_Id"), ("Customer_Souls_Id"), ("Number_Of_Therapists_Required"), ("Therapist_Gender"), 
 	("Massage_For"),("Slot_Time"), ("Slot_Date"), ("Customer_Address"), ("Pincode"), ("Latitude"), ("Longitude"), 
 	("Massage_Duration"), ("CreatedAt"), ("Customer_Name"), ("Total_Order_Amount") FROM slh_customers_pending_orders WHERE ("Merchant_Transaction_Id")=$1;`
@@ -143,10 +145,11 @@ func CustomerTransaction(w http.ResponseWriter, r *http.Request) (CustomerTran, 
 		&customer.Massage_Duration, &customer.CreatedAt, &customer.Customer_Name, &customer.Total_Order_Amount)
 	fmt.Println(customer.Customer_Id)
 	if err != nil {
+		fmt.Println(12)
 		w.WriteHeader(http.StatusNotFound)
 		return CustomerTran{}, ErorMesg{Message: err.Error()}
 	}
-	// fmt.Println(12345678)
+	fmt.Println(12345678)
 	sqlStatement := `
 	INSERT INTO slh_transactions ("Customer_Order_Id","Customer_Id", "Customer_Souls_Id", "Number_Of_Therapist_Required", "Therapist_Gender", 
 	"Massage_For","Slot_Time", "Slot_Date", "Customer_Address", "Pincode", "Latitude", "Longitude", "Merchant_Transaction_Id", 
@@ -161,13 +164,14 @@ func CustomerTransaction(w http.ResponseWriter, r *http.Request) (CustomerTran, 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		//panic(err)
+		fmt.Println(12)
 		return customer, ErorMesg{Message: err.Error()}
 	}
 
 	//Customer_Assign_Partner
 
-	Assign(customer.Merchant_Transaction_Id)
-
+	// Assign(customer.Merchant_Transaction_Id)
+	fmt.Println(12)
 	return customer, ErorMesg{}
 }
 
