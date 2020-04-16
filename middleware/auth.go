@@ -56,13 +56,13 @@ func ValidateTokenMiddleware(next http.HandlerFunc) http.HandlerFunc {
 					context.Set(req, Decoded, email)
 					next(w, req)
 				} else {
-					json.NewEncoder(w).Encode(ErrorMsg{Message: err.Error()})
+					json.NewEncoder(w).Encode(ErrorMsg{Message: "Invalid authorization token"})
 				}
 			} else {
-				json.NewEncoder(w).Encode(ErrorMsg{Message: err.Error()})
+				json.NewEncoder(w).Encode(ErrorMsg{Message: "Invalid authorization token"})
 			}
 		} else {
-			json.NewEncoder(w).Encode(ErrorMsg{Message: err.Error()})
+			json.NewEncoder(w).Encode(ErrorMsg{Message: "An authorization header is required"})
 		}
 	})
 }

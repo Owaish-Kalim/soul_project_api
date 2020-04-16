@@ -65,6 +65,7 @@ func main() {
 
 	r.HandleFunc("/communication/template/create", middleware.ValidateTokenMiddleware(comm_template.Create)).Methods("POST")
 	r.HandleFunc("/communication/template/list", middleware.ValidateTokenMiddleware(comm_template.List)).Methods("GET")
+	r.HandleFunc("/communication/template/update", middleware.ValidateTokenMiddleware(comm_template.Update)).Methods("PUT")
 
 	r.HandleFunc("/souls/settings/create", middleware.ValidateTokenMiddleware(souls_settings.Create)).Methods("POST")
 	r.HandleFunc("/souls/settings/update", middleware.ValidateTokenMiddleware(souls_settings.Update)).Methods("PUT")

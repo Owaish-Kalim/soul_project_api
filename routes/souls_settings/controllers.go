@@ -32,7 +32,7 @@ func CreateSettings(w http.ResponseWriter, r *http.Request) (Temp, Shared.ErrorM
 		return temp, res
 	}
 
-	return temp, err
+	return temp, Shared.ErrorMessage{}
 }
 
 func UpdateSettings(w http.ResponseWriter, r *http.Request) (Temp, Shared.ErrorMessage) {
@@ -45,10 +45,10 @@ func UpdateSettings(w http.ResponseWriter, r *http.Request) (Temp, Shared.ErrorM
 		panic(err)
 	}
 
-	sqlStatement := ` UPDATE slh_souls_settings SET "Type" = $1,"URL" = $2, "Description" = $3,"HostName" = $4, "UserName" = $5, "Password" = $6
-	WHERE "Souls_Setting_Id" = $7`
+	sqlStatement := ` UPDATE slh_souls_settings SET "URL" = $1, "Description" = $2,"HostName" = $3, "UserName" = $4, "Password" = $5
+	WHERE "Souls_Setting_Id" = $6`
 
-	_, err = config.Db.Exec(sqlStatement, temp.Type, temp.URL, temp.Description, temp.HostName, temp.UserName, temp.Password, temp.Souls_Setting_Id)
+	_, err = config.Db.Exec(sqlStatement, temp.URL, temp.Description, temp.HostName, temp.UserName, temp.Password, temp.Souls_Setting_Id)
 	if err != nil {
 		panic(err)
 		w.WriteHeader(http.StatusPreconditionFailed)

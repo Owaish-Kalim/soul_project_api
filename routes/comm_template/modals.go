@@ -8,6 +8,5 @@ type Temp struct {
 	SMS_content   string `json:"sms_content"`
 	Subject       string `json:"subject"`
 	Email_content string `json:"email_content"`
+	Status        string `json:"status"`
 }
-
-

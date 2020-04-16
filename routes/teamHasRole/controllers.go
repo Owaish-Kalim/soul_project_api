@@ -119,7 +119,7 @@ func Role_Team(w http.ResponseWriter, r *http.Request) (Roles, ErrorMessage) {
 	return roles, ErrorMessage{}
 }
 
-func TeamHasRoleUpdate(w http.ResponseWriter, r *http.Request) (RoleUp, ErrorMessage) {
+func TeamHasRoleUpdate(w http.ResponseWriter, r *http.Request) (RoleUp, Shared.ErrorMessage) {
 	fmt.Println(4)
 	r.ParseForm()
 	roles := RoleUp{}
@@ -133,7 +133,7 @@ func TeamHasRoleUpdate(w http.ResponseWriter, r *http.Request) (RoleUp, ErrorMes
 	err = row.Scan(&roles.Role_Id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return RoleUp{}, Shared.ErrorMsg{Message: err.Error()}
+		return RoleUp{}, Shared.ErrorMessage{Message: err.Error()}
 	}
 
 	sqlStatement = ` UPDATE slh_team_has_role SET "Team_Has_Role_Id" = $1  WHERE ("Team_Id") = $2`
@@ -141,7 +141,7 @@ func TeamHasRoleUpdate(w http.ResponseWriter, r *http.Request) (RoleUp, ErrorMes
 	_, err = config.Db.Exec(sqlStatement, roles.Role_Id, roles.TeamId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return RoleUp{}}, Shared.ErrorMsg{Message: err.Error()}
+		return RoleUp{}, Shared.ErrorMessage{Message: err.Error()}
 	}
 
 	sqlStatement = ` UPDATE slh_teams SET "Role" = $1  WHERE ("TeamId") = $2`
@@ -149,8 +149,8 @@ func TeamHasRoleUpdate(w http.ResponseWriter, r *http.Request) (RoleUp, ErrorMes
 	_, err = config.Db.Exec(sqlStatement, roles.Role_Name, roles.TeamId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return RoleUp{}}, Shared.ErrorMsg{Message: err.Error()}
+		return RoleUp{}, Shared.ErrorMessage{Message: err.Error()}
 	}
 
-	return roles, ErrorMessage{}
+	return roles, Shared.ErrorMessage{}
 }
