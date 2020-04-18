@@ -48,14 +48,14 @@ func AddCustomer(w http.ResponseWriter, r *http.Request) (Customer, ErrorMsg) {
 		return Customer{}, res
 	}
 
-	fmt.Println(1)
-	check := Shared.MobileVerify(customer.Customer_Mobile_No)
-	fmt.Println(1)
+	// fmt.Println(1)
+	// check := Shared.MobileVerify(customer.Customer_Mobile_No)
+	// // fmt.Println(1)
 
-	if check != "correct" {
-		res.Message = check
-		return Customer{}, res
-	}
+	// if check != "correct" {
+	// 	res.Message = check
+	// 	return Customer{}, res
+	// }
 
 	customer.Status = "Active"
 	curr_time := time.Now()

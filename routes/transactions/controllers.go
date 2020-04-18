@@ -12,9 +12,11 @@ import (
 
 	// "time"
 	"math"
-	"github.com/gorilla/websocket"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
+
 var upgrader = websocket.Upgrader{}
 
 var Updated = false
@@ -124,10 +126,6 @@ func Assign(MTId string) CustomerPartner {
 
 }
 
-
-
-
-
 func Socket(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r.Method)
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
@@ -150,27 +148,20 @@ func Socket(w http.ResponseWriter, r *http.Request) {
 				conn.WriteJSON(SocketResponseData)
 				Updated = false
 			}
-				
+
 		}
 	}(conn)
 
 	fmt.Println("SOCKET END")
 
-
-	 // userEmail := context.Get(r, middleware.Decoded)
-	 
-	 
-
+	// userEmail := context.Get(r, middleware.Decoded)
 
 	// fmt.Println(userEmail)
 
 }
 
-
-
-
 func CustomerTransaction(w http.ResponseWriter, r *http.Request) (CustomerTran, ErorMesg) {
-	
+
 	r.ParseForm()
 
 	customer := CustomerTran{}
@@ -222,10 +213,9 @@ func CustomerTransaction(w http.ResponseWriter, r *http.Request) (CustomerTran, 
 		return customer, ErorMesg{Message: err.Error()}
 	}
 
-
 	// NOTIFICATION
 
-	Updated=true
+	Updated = true
 	SocketResponseData.Customer_Name = customer.Customer_Name
 	SocketResponseData.Customer_Souls_Id = customer.Customer_Souls_Id
 	SocketResponseData.Merchant_Transaction_Id = customer.Merchant_Transaction_Id

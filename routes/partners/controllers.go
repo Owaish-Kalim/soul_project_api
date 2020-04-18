@@ -6,9 +6,12 @@ import (
 	"net/http"
 	"regexp"
 	"soul_api/config"
+	"soul_api/middleware"
 	Shared "soul_api/routes"
 	"strconv"
 	"time"
+
+	"github.com/gorilla/context"
 )
 
 func CreatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner) {
@@ -25,7 +28,7 @@ func CreatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 		// panic(err)
 	}
 
-	fmt.Println(12)
+	// fmt.Println(12)
 	res.Message = ""
 	CheckEmpty(partner, &res)
 	if res.Message != "" {
@@ -33,7 +36,7 @@ func CreatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 		return partner, res
 	}
 
-	fmt.Println(12)
+	// fmt.Println(12)
 
 	re := regexp.MustCompile(`^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
 	if re.MatchString(partner.Partner_MobileNo) == false {
@@ -41,13 +44,28 @@ func CreatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 		res.Message = err.Error()
 		return Partner{}, res
 	}
-	fmt.Println(12)
+	// fmt.Println(12)
+	var x string
+	var y string
+	userEmail := context.Get(r, middleware.Decoded)
 
+	sqlStatement := `SELECT ("FirstName"), ("LastName") FROM slh_teams WHERE ("Email" = $1);`
+
+	row := config.Db.QueryRow(sqlStatement, userEmail)
+	err = row.Scan(&x, &y)
+	if err != nil {
+		w.WriteHeader(http.StatusPreconditionFailed)
+		res.Message = err.Error()
+		return Partner{}, res
+	}
+
+	partner.CreatedBy = x + " " + y
+	partner.UpdatedBy = x + " " + y
 	curr_time := time.Now()
 	partner.UpdatedAt = curr_time.Format("02-01-2006 3:4:5 PM")
 	partner.CreatedAt = curr_time.Format("02-01-2006 3:4:5 PM")
 
-	sqlStatement := `
+	sqlStatement = `
 	INSERT INTO slh_partners ("Partner_Name", "Partner_Email", "Partner_Mobile_No", "Partner_Address", "Pincode", "Latitude", "Longitude", 
 	"Per_Visit_Price_Commission", "Commission_Type", "Onboard_Date", "UpdatedAt", "CreatedAt", "Last_Updated_By","Partner_Gender", "CreatedBy")
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) 
@@ -97,13 +115,29 @@ func UpdatePartner(w http.ResponseWriter, r *http.Request) (Partner, ErrPartner)
 		return Partner{}, res
 	}
 
+	var x string
+	var y string
+	userEmail := context.Get(r, middleware.Decoded)
+
+	sqlStatement := `SELECT ("FirstName"), ("LastName") FROM slh_teams WHERE ("Email" = $1);`
+
+	row := config.Db.QueryRow(sqlStatement, userEmail)
+	err = row.Scan(&x, &y)
+	if err != nil {
+		w.WriteHeader(http.StatusPreconditionFailed)
+		res.Message = err.Error()
+		return Partner{}, res
+	}
+
+	partner.UpdatedBy = x + " " + y
+
 	curr_time := time.Now()
 	partner.UpdatedAt = curr_time.Format("02-01-2006 3:4:5 PM")
 	fmt.Println(partner.Partner_Id)
 
 	var result Shared.Result
 
-	sqlStatement := `UPDATE slh_partners SET "Partner_Name" = $1, "Partner_Mobile_No" = $2,"Partner_Gender"=$3, "Partner_Address" = $4,
+	sqlStatement = `UPDATE slh_partners SET "Partner_Name" = $1, "Partner_Mobile_No" = $2,"Partner_Gender"=$3, "Partner_Address" = $4,
 	"Pincode"=$5,"Latitude"=$6, "Longitude"=$7, "Per_Visit_Price_Commission"=$8,"Commission_Type"=$9,"Last_Updated_By"=$10, 
 	"Onboard_Date"=$11,"CreatedBy"=$12 WHERE ("Partner_Email") = $13`
 

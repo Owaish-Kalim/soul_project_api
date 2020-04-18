@@ -67,6 +67,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 
 	team_role := TeamRole{}
 	sqlStatement = `SELECT ("Role_Id") FROM slh_roles WHERE ("Role_Name" = $1);`
+
 	row = config.Db.QueryRow(sqlStatement, team.Role)
 	err = row.Scan(&team_role.Team_Has_Role_Id)
 	if err != nil {
@@ -77,6 +78,10 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 
 	curr_time := time.Now()
 	team.CreatedAt = curr_time.Format("02-01-2006 3:4:5 PM")
+	curr_time, err = time.Parse("2006-01-02", team.Joining_Date)
+
+	team.Joining_Date = curr_time.Format("02 Apr 2020")
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(team.Password), 8)
 
 	if err != nil {
