@@ -108,15 +108,15 @@ func CheckEmpty(partner Partner, res *ErrPartner) {
 		res.Message = "Error"
 	}
 
-	if partner.CreatedBy == "" {
-		res.Created_By = "Created By cannot be empty."
-		res.Message = "Error"
-	}
+	// if partner.CreatedBy == "" {
+	// 	res.Created_By = "Created By cannot be empty."
+	// 	res.Message = "Error"
+	// }
 
-	if partner.UpdatedBy == "" {
-		res.Updated_By = "Updated By cannot be empty."
-		res.Message = "Error"
-	}
+	// if partner.UpdatedBy == "" {
+	// 	res.Updated_By = "Updated By cannot be empty."
+	// 	res.Message = "Error"
+	// }
 
 	if partner.Latitude == "" {
 		res.Latitude = "Latitude cannot be empty."
