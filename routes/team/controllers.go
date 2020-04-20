@@ -77,11 +77,11 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	}
 
 	curr_time := time.Now()
+	fmt.Println("owowow")
+	fmt.Println(curr_time)
 	team.CreatedAt = curr_time.Format("02-01-2006 3:4:5 PM")
-	curr_time, err = time.Parse("2006-01-02", team.Joining_Date)
-
-	team.Joining_Date = curr_time.Format("02 Apr 2020")
-
+	team.Joining_Date = curr_time.Format("02-Jan-2006")
+	fmt.Println(team.Joining_Date)
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(team.Password), 8)
 
 	if err != nil {
@@ -130,7 +130,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) (Response, Shared.ErrorM
 	return response, res
 }
 
-func LoginTeam(w http.ResponseWriter, r *http.Request) (LoginResponse, Shared.ErrorMsg) {
+func LoginTeam(w http.ResponseWriter, r *http.Request) (LoginResponse, Shared.ErrorMessage) {
 	r.ParseForm()
 	var client = Team{}
 	var response = LoginResponse{}
@@ -142,7 +142,7 @@ func LoginTeam(w http.ResponseWriter, r *http.Request) (LoginResponse, Shared.Er
 	if client.Email == "" ||
 		client.Password == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		return response, Shared.ErrorMsg{Message: err.Error()}
+		return response, Shared.ErrorMessage{Message: "Invalid Email-Id or Password"}
 	}
 
 	sqlStatement := `SELECT ("TeamId"), ("FirstName"), ("LastName"), ("Email"), ("Password"), ("Address"), ("MobileNo"), ("Status"), 
@@ -155,12 +155,12 @@ func LoginTeam(w http.ResponseWriter, r *http.Request) (LoginResponse, Shared.Er
 	switch err {
 	case sql.ErrNoRows:
 		w.WriteHeader(http.StatusNotFound)
-		return response, Shared.ErrorMsg{Message: err.Error()}
+		return response, Shared.ErrorMessage{Message: "Invalid Email-Id or Password"}
 	case nil:
 		eror := bcrypt.CompareHashAndPassword([]byte(team.Password), []byte(client.Password))
 		if eror != nil {
 			w.WriteHeader(http.StatusForbidden)
-			return response, Shared.ErrorMsg{Message: err.Error()}
+			return response, Shared.ErrorMessage{Message: err.Error()}
 		}
 
 		expirationTime := time.Now().Add(15000 * time.Minute)
@@ -175,16 +175,16 @@ func LoginTeam(w http.ResponseWriter, r *http.Request) (LoginResponse, Shared.Er
 		tokenString, err := token.SignedString(Shared.JwtKey)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return response, Shared.ErrorMsg{Message: err.Error()}
+			return response, Shared.ErrorMessage{Message: err.Error()}
 		}
 		sqlStatement := `UPDATE slh_teams SET "Token"=$1 WHERE "Email"=$2`
 		_, err = config.Db.Exec(sqlStatement, tokenString, team.Email)
 		if err != nil {
-			return response, Shared.ErrorMsg{Message: err.Error()}
+			return response, Shared.ErrorMessage{Message: err.Error()}
 		}
 		team.Token = tokenString
 		BuildLoginResponse(&response, team)
-		return response, Shared.ErrorMsg{Message: ""}
+		return response, Shared.ErrorMessage{}
 	default:
 		panic(err)
 	}

@@ -73,6 +73,8 @@ func main() {
 	r.HandleFunc("/souls/settings/update", middleware.ValidateTokenMiddleware(souls_settings.Update)).Methods("PUT")
 	r.HandleFunc("/souls/settings/list", middleware.ValidateTokenMiddleware(souls_settings.List)).Methods("GET")
 
+	r.HandleFunc("/assign-partner/list", middleware.ValidateTokenMiddleware(transactions.Assign_List)).Methods("GET")
+
 	fmt.Println("Starting Server")
 	log.Fatal(http.ListenAndServe(":8000", handler))
 	fmt.Println("Server Started")

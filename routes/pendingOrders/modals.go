@@ -48,6 +48,9 @@ type query struct {
 	Massage_Duration        string
 	Merchant_Transaction_Id string
 	Total_Order_Amount      string
+	Slot_Date               string
+	Slot_Time               string
+	CreatedAt               string
 }
 
 func CheckEmpty(customer CustomerOrder, res *ErorMsg) {

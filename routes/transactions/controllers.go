@@ -288,6 +288,9 @@ func ListCustomerTransaction(w http.ResponseWriter, r *http.Request) ([]Customer
 	q.Payment_Gateway_Mode = r.Form.Get("payment_gateway_mode")
 	q.Transaction_Mode = r.Form.Get("transaction_mode")
 	q.Bank_Type = r.Form.Get("bank_type")
+	q.Slot_Date = r.Form.Get("slot_date")
+	q.Slot_Time = r.Form.Get("slot_time")
+	q.CreatedAt = r.Form.Get("created_at")
 
 	offset := q.Limit * q.Page
 	var customers []CustomerTran
@@ -295,20 +298,24 @@ func ListCustomerTransaction(w http.ResponseWriter, r *http.Request) ([]Customer
 	("Massage_Duration") ,("Number_Of_Therapist_Required"),("Massage_For"), ("Therapist_Gender"), ("Merchant_Transaction_Id"),
 	("Total_Order_Amount"), ("Latitude"),("Longitude"), ("CreatedAt"), ("Slot_Date"), ("Slot_Time"), ("Payment_Gateway_Id"), ("Payment_Gateway_Mode"), 
 	("Transaction_Mode"), ("Bank_Type")  FROM slh_transactions
-	WHERE ("Customer_Souls_Id") LIKE  ''||$1||'%' 
-	AND ("Customer_Name") LIKE ''|| $2 ||'%' 
-	AND ("Total_Order_Amount") LIKE ''|| $3 ||'%' 
-	AND ("Massage_Duration") LIKE ''|| $4 ||'%' 
-	AND ("Pincode") LIKE ''|| $5 ||'%' 
-	AND ("Merchant_Transaction_Id") LIKE ''|| $6 ||'%' 
-	AND ("Payment_Gateway_Id") LIKE ''|| $7 ||'%' 
-	AND ("Payment_Gateway_Mode") LIKE ''|| $8 ||'%' 
-	AND ("Transaction_Mode") LIKE ''|| $9 ||'%' 
-	AND ("Bank_Type") LIKE ''|| $10 ||'%' 
-	ORDER BY ("CreatedAt") DESC LIMIT $11 OFFSET $12`
+	WHERE ("Customer_Souls_Id") ILIKE  ''||$1||'%' 
+	AND ("Customer_Name") ILIKE ''|| $2 ||'%' 
+	AND ("Total_Order_Amount") ILIKE ''|| $3 ||'%' 
+	AND ("Massage_Duration") ILIKE ''|| $4 ||'%' 
+	AND ("Pincode") ILIKE ''|| $5 ||'%' 
+	AND ("Merchant_Transaction_Id") ILIKE ''|| $6 ||'%' 
+	AND ("Payment_Gateway_Id") ILIKE ''|| $7 ||'%' 
+	AND ("Payment_Gateway_Mode") ILIKE ''|| $8 ||'%' 
+	AND ("Transaction_Mode") ILIKE ''|| $9 ||'%' 
+	AND ("Bank_Type") ILIKE ''|| $10 ||'%' 
+	AND ("Slot_Date") ILIKE ''|| $11||'%' 
+	AND ("Slot_Time") ILIKE ''|| $12 ||'%' 
+	AND ("CreatedAt") ILIKE ''|| $13 ||'%'  
+	ORDER BY ("CreatedAt") DESC LIMIT $14 OFFSET $15`
 
 	rows, err := config.Db.Query(sqlStatement, q.Customer_Souls_Id, q.Customer_Name, q.Total_Order_Amount, q.Massage_Duration, q.Pincode,
-		q.Merchant_Transaction_Id, q.Payment_Gateway_Id, q.Payment_Gateway_Mode, q.Transaction_Mode, q.Bank_Type, q.Limit, offset)
+		q.Merchant_Transaction_Id, q.Payment_Gateway_Id, q.Payment_Gateway_Mode, q.Transaction_Mode, q.Bank_Type, q.Slot_Date,
+		q.Slot_Time, q.CreatedAt, q.Limit, offset)
 
 	fmt.Println(12)
 
@@ -332,18 +339,22 @@ func ListCustomerTransaction(w http.ResponseWriter, r *http.Request) ([]Customer
 	}
 
 	sqlStatement = `SELECT COUNT(*) FROM slh_transactions WHERE 
-	("Customer_Souls_Id") LIKE  ''||$1||'%' 
-	AND ("Customer_Name") LIKE ''|| $2 ||'%' 
-	AND ("Total_Order_Amount") LIKE ''|| $3 ||'%' 
-	AND ("Massage_Duration") LIKE ''|| $4 ||'%' 
-	AND ("Pincode") LIKE ''|| $5 ||'%' 
-	AND ("Merchant_Transaction_Id") LIKE ''|| $6 ||'%' 
-	AND ("Payment_Gateway_Id") LIKE ''|| $7 ||'%' 
-	AND ("Payment_Gateway_Mode") LIKE ''|| $8 ||'%' 
-	AND ("Transaction_Mode") LIKE ''|| $9 ||'%' 
-	AND ("Bank_Type") LIKE ''|| $10 ||'%' `
+	("Customer_Souls_Id") ILIKE  ''||$1||'%' 
+	AND ("Customer_Name") ILIKE ''|| $2 ||'%' 
+	AND ("Total_Order_Amount") ILIKE ''|| $3 ||'%' 
+	AND ("Massage_Duration") ILIKE ''|| $4 ||'%' 
+	AND ("Pincode") ILIKE ''|| $5 ||'%' 
+	AND ("Merchant_Transaction_Id") ILIKE ''|| $6 ||'%' 
+	AND ("Payment_Gateway_Id") ILIKE ''|| $7 ||'%' 
+	AND ("Payment_Gateway_Mode") ILIKE ''|| $8 ||'%' 
+	AND ("Transaction_Mode") ILIKE ''|| $9 ||'%' 
+	AND ("Bank_Type") ILIKE ''|| $10 ||'%'
+	AND ("Slot_Date") ILIKE ''|| $11 ||'%' 
+	AND ("Slot_Time") ILIKE ''|| $12 ||'%' 
+	AND ("CreatedAt") ILIKE ''|| $13 ||'%'   `
 	cntRow := config.Db.QueryRow(sqlStatement, q.Customer_Souls_Id, q.Customer_Name, q.Total_Order_Amount, q.Massage_Duration, q.Pincode,
-		q.Merchant_Transaction_Id, q.Payment_Gateway_Id, q.Payment_Gateway_Mode, q.Transaction_Mode, q.Bank_Type)
+		q.Merchant_Transaction_Id, q.Payment_Gateway_Id, q.Payment_Gateway_Mode, q.Transaction_Mode, q.Bank_Type, q.Slot_Date,
+		q.Slot_Time, q.CreatedAt)
 	cnt := 0
 	err = cntRow.Scan(&cnt)
 	if err != nil {
@@ -378,13 +389,13 @@ func UpdateCustomerTransaction(w http.ResponseWriter, r *http.Request) (Customer
 
 	var res Shared.Result
 
-	sqlStatement := ` UPDATE slh_transactions SET "Payment_Gateway_Id" = $1, "Bank_Type" = $2, "Payment_Gateway_Mode" = $3, "Transaction_Mode" = $4,
-	"Number_Of_Therapist_Required" = $5, "Therapist_Gender" = $6, "Massage_For" = $7, "Slot_Time" = $8, "Slot_Date" = $9, "Customer_Address" = $10, 
-	"Pincode" = $11, "Latitude" = $12,"Longitude" = $13, "Total_Order_Amount" = $14, "Massage_Duration" = $15 WHERE ("Merchant_Transaction_Id") = $16`
+	sqlStatement := ` UPDATE slh_transactions SET 
+	"Number_Of_Therapist_Required" = $1, "Therapist_Gender" = $2, "Massage_For" = $3, "Slot_Time" = $4, "Slot_Date" = $5, "Customer_Address" = $6, 
+	"Pincode" = $7, "Latitude" = $8,"Longitude" = $9, "Massage_Duration" = $10 WHERE ("Merchant_Transaction_Id") = $11`
 
-	res, err = config.Db.Exec(sqlStatement, customer.Payment_Gateway_Id, customer.Bank_Type, customer.Payment_Gateway_Mode, customer.Transaction_Mode,
+	res, err = config.Db.Exec(sqlStatement,
 		customer.Number_Of_Therapist, customer.Therapist_Gender, customer.Massage_For, customer.Slot_Time, customer.Slot_Date,
-		customer.Customer_Address, customer.Pincode, customer.Latitude, customer.Longitude, customer.Total_Order_Amount,
+		customer.Customer_Address, customer.Pincode, customer.Latitude, customer.Longitude,
 		customer.Massage_Duration, customer.Merchant_Transaction_Id)
 	if err != nil {
 		// fmt.Println(22)
@@ -401,4 +412,9 @@ func UpdateCustomerTransaction(w http.ResponseWriter, r *http.Request) (Customer
 	}
 	// BuildResp(&response, customer)
 	return customer, ErorMesg{}
+}
+
+func ListAssign(w http.ResponseWriter, r *http.Request) ([]CustomerTran, ErrorMessage) {
+	// fmt.Println(1266)
+	return []CustomerTran{}, ErrorMessage{}
 }

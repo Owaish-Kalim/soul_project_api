@@ -61,7 +61,6 @@ func AddCustomer(w http.ResponseWriter, r *http.Request) (Customer, ErrorMsg) {
 	curr_time := time.Now()
 	customer.CreatedAt = curr_time.Format("02-01-2006 3:4:5 PM")
 	customer.Last_Access_Time = curr_time.Format("02-01-2006 3:4:5 PM")
-	customer.Registered_Source = "website"
 
 	sqlStatement := `
 	INSERT INTO slh_customers ("Customer_Name", "Customer_Email", "Customer_Address", "Pincode", "Customer_Gender","Customer_Mobile_No", 
@@ -145,10 +144,10 @@ func UpdateCustomer(w http.ResponseWriter, r *http.Request) (CustomerUpd, ErrorM
 	customer.Last_Access_Time = curr_time.Format("02-01-2006 3:4:5 PM")
 
 	sqlStatement := ` UPDATE slh_customers SET "Customer_Name" = $1, "Customer_Email" = $2, "Customer_Address" = $3, "Pincode" = $4, "Customer_Gender" = $5,
-	"Status" = $6, "Registered_Source" = $7, "Last_Access_Time" = $8 WHERE ("Customer_Mobile_No") = $9`
+	"Status" = $6, "Last_Access_Time" = $7 WHERE ("Customer_Mobile_No") = $8`
 
 	res, err = config.Db.Exec(sqlStatement, customer.Customer_Name, customer.Customer_Email, customer.Customer_Address, customer.Pincode,
-		customer.Customer_Gender, customer.Status, customer.Registered_Source, customer.Last_Access_Time, customer.Customer_Mobile_No)
+		customer.Customer_Gender, customer.Status, customer.Last_Access_Time, customer.Customer_Mobile_No)
 	if err != nil {
 		fmt.Println(22)
 		w.WriteHeader(http.StatusNotFound)
@@ -197,6 +196,7 @@ func ListCustomer(w http.ResponseWriter, r *http.Request) ([]Customer, ErrorMess
 	q.Customer_Gender = r.Form.Get("customer_gender")
 	q.Pincode = r.Form.Get("pincode")
 	q.Status = r.Form.Get("status")
+	q.CreatedAt = r.Form.Get("created_at")
 	// q.CreatedAt = r.Form  // Created
 
 	fmt.Println(q)
@@ -212,9 +212,10 @@ func ListCustomer(w http.ResponseWriter, r *http.Request) ([]Customer, ErrorMess
 	AND ("Customer_Mobile_No") ILIKE ''|| $5 ||'%' 
 	AND ("Pincode") ILIKE ''|| $6 ||'%' 
 	AND ("Status") ILIKE ''|| $7 ||'%' 
-	ORDER BY ("CreatedAt") DESC LIMIT $8 OFFSET $9`
+	AND ("CreatedAt") ILIKE ''|| $8 ||'%' 
+	ORDER BY ("CreatedAt") DESC LIMIT $9 OFFSET $10`
 	rows, err := config.Db.Query(sqlStatement, q.Customer_Souls_Id, q.Customer_Name, q.Customer_Gender, q.Customer_Email, q.Customer_Mobile_No,
-		q.Pincode, q.Status, q.Limit, offset)
+		q.Pincode, q.Status, q.CreatedAt, q.Limit, offset)
 	// fmt.Println(rows)
 	if err != nil {
 		fmt.Print("asfafs")
@@ -240,9 +241,10 @@ func ListCustomer(w http.ResponseWriter, r *http.Request) ([]Customer, ErrorMess
 	AND ("Customer_Email") ILIKE ''|| $4 ||'%' 
 	AND ("Customer_Mobile_No") ILIKE ''|| $5 ||'%' 
 	AND ("Pincode") ILIKE ''|| $6 ||'%' 
-	AND ("Status") ILIKE ''|| $7 ||'%' `
+	AND ("Status") ILIKE ''|| $7 ||'%'
+	AND ("CreatedAt") ILIKE ''|| $8 ||'%'`
 	cntRow := config.Db.QueryRow(sqlStatement, q.Customer_Souls_Id, q.Customer_Name, q.Customer_Gender, q.Customer_Email, q.Customer_Mobile_No,
-		q.Pincode, q.Status)
+		q.Pincode, q.Status, q.CreatedAt)
 	cnt := 0
 	err = cntRow.Scan(&cnt)
 	if err != nil {

@@ -124,7 +124,10 @@ func ListCustomerBooking(w http.ResponseWriter, r *http.Request) ([]CustomerOrde
 	q.Merchant_Transaction_Id = r.Form.Get("merchant_transaction_id")
 	q.Pincode = r.Form.Get("pincode")
 	q.Is_Order_Confirmed = r.Form.Get("is_order_confirmed")
-	q.Total_Order_Amount = r.Form.Get("total_order_amount")
+	q.Pincode = r.Form.Get("pincode")
+	q.Slot_Date = r.Form.Get("slot_date")
+	q.Slot_Time = r.Form.Get("slot_time")
+	q.CreatedAt = r.Form.Get("created_at")
 
 	offset := q.Limit * q.Page // slot time and slot date createtime search
 
@@ -132,17 +135,21 @@ func ListCustomerBooking(w http.ResponseWriter, r *http.Request) ([]CustomerOrde
 	sqlStatement := `SELECT ("Customer_Order_Id"), ("Customer_Souls_Id"),("Customer_Name"), ("Customer_Id"),("Pincode"),("Customer_Address"),
 	("Massage_Duration") ,("Number_Of_Therapists_Required"),("Massage_For"), ("Therapist_Gender"), ("Merchant_Transaction_Id"),
 	("Total_Order_Amount"), ("Latitude"),("Longitude"), ("Is_Order_Confirmed"), ("CreatedAt"), ("Slot_Date"), ("Slot_Time") FROM slh_customers_pending_orders
-	WHERE ("Customer_Souls_Id") LIKE  ''||$1||'%' 
-	AND ("Customer_Name") LIKE ''|| $2 ||'%' 
-	AND ("Massage_Duration") LIKE ''|| $3 ||'%' 
-	AND ("Total_Order_Amount") LIKE ''|| $4 ||'%' 
-	AND ("Merchant_Transaction_Id") LIKE ''|| $5 ||'%' 
-	AND ("Pincode") LIKE ''|| $6 ||'%' 
-	AND ("Is_Order_Confirmed") LIKE ''|| $7 ||'%'  
-	ORDER BY ("CreatedAt") DESC LIMIT $8 OFFSET $9`
+	WHERE ("Customer_Souls_Id") ILIKE  ''|| $1 ||'%' 
+	AND ("Customer_Name") ILIKE ''|| $2 ||'%' 
+	AND ("Massage_Duration") ILIKE ''|| $3 ||'%' 
+	AND ("Total_Order_Amount") ILIKE ''|| $4 ||'%' 
+	AND ("Merchant_Transaction_Id") ILIKE ''|| $5 ||'%' 
+	AND ("Pincode") ILIKE ''|| $6 ||'%' 
+	AND ("Is_Order_Confirmed") ILIKE ''|| $7 ||'%'  
+	AND ("Slot_Date") ILIKE ''|| $8 ||'%' 
+	AND ("Slot_Time") ILIKE ''|| $9 ||'%' 
+	AND ("CreatedAt") ILIKE ''|| $10 ||'%'  
+	ORDER BY ("CreatedAt") DESC LIMIT $11 OFFSET $12`
 
 	rows, err := config.Db.Query(sqlStatement, q.Customer_Souls_Id, q.Customer_Name, q.Massage_Duration, q.Total_Order_Amount, q.Merchant_Transaction_Id,
-		q.Pincode, q.Is_Order_Confirmed, q.Limit, offset)
+		q.Pincode, q.Is_Order_Confirmed, q.Slot_Date,
+		q.Slot_Time, q.CreatedAt, q.Limit, offset)
 
 	if err != nil {
 		fmt.Print("asfafs")
@@ -150,7 +157,7 @@ func ListCustomerBooking(w http.ResponseWriter, r *http.Request) ([]CustomerOrde
 		w.WriteHeader(http.StatusInternalServerError)
 		return customers, ErrorMessage{Message: err.Error()}
 	}
-	// fmt.Print("ASHS")
+	fmt.Print("ASHS")
 	// fmt.Println(len(rows))
 	for rows.Next() {
 		var customer = CustomerOrder{}
@@ -161,25 +168,31 @@ func ListCustomerBooking(w http.ResponseWriter, r *http.Request) ([]CustomerOrde
 		customers = append(customers, customer)
 		// cnt = cnt + 1
 	}
+	fmt.Println(12)
 
-	sqlStatement = `SELECT COUNT(*) FROM slh_customers_pending_orders WHERE 
-	("Customer_Souls_Id") LIKE  ''||$1||'%' 
-	AND ("Customer_Name") LIKE ''|| $2 ||'%' 
-	AND ("Massage_Duration") LIKE ''|| $3 ||'%' 
-	AND ("Total_Order_Amount") LIKE ''|| $4 ||'%' 
-	AND ("Merchant_Transaction_Id") LIKE ''|| $5 ||'%' 
-	AND ("Pincode") LIKE ''|| $6 ||'%' 
-	AND ("Is_Order_Confirmed") LIKE ''|| $7 ||'%' `
+	sqlStatement = `SELECT COUNT(*) FROM slh_customers_pending_orders 
+	WHERE ("Customer_Souls_Id") ILIKE  ''||$1||'%' 
+	AND ("Customer_Name") ILIKE ''|| $2 ||'%' 
+	AND ("Massage_Duration") ILIKE ''|| $3 ||'%' 
+	AND ("Total_Order_Amount") ILIKE ''|| $4 ||'%' 
+	AND ("Merchant_Transaction_Id") ILIKE ''|| $5 ||'%' 
+	AND ("Pincode") ILIKE ''|| $6 ||'%' 
+	AND ("Is_Order_Confirmed") ILIKE ''|| $7 ||'%'
+	AND ("Slot_Date") ILIKE ''|| $8 ||'%' 
+	AND ("Slot_Time") ILIKE ''|| $9 ||'%' 
+	AND ("CreatedAt") ILIKE ''|| $10 ||'%'  `
 	cntRow := config.Db.QueryRow(sqlStatement, q.Customer_Souls_Id, q.Customer_Name, q.Massage_Duration, q.Total_Order_Amount, q.Merchant_Transaction_Id,
-		q.Pincode, q.Is_Order_Confirmed)
+		q.Pincode, q.Is_Order_Confirmed, q.Slot_Date, q.Slot_Time, q.CreatedAt)
 	cnt := 0
 	err = cntRow.Scan(&cnt)
 	if err != nil {
-		// fmt.Println(232)
+		fmt.Println(232)
 		// panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return customers, ErrorMessage{Message: err.Error()}
 	}
+
+	fmt.Println(13)
 
 	w.Header().Set("Total-Count", strconv.Itoa(cnt))
 	totalPages := cnt / q.Limit

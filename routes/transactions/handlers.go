@@ -2,8 +2,8 @@ package transactions
 
 import (
 	"encoding/json"
-	"net/http"
 	"fmt"
+	"net/http"
 	// "soul_api/routes/users"
 )
 
@@ -62,6 +62,20 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	customer, err := UpdateCustomerTransaction(w, r)
+	if err.Message != "" {
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+	json.NewEncoder(w).Encode(customer)
+}
+
+func Assign_List(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != "GET" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+	customer, err := ListAssign(w, r)
 	if err.Message != "" {
 		json.NewEncoder(w).Encode(err)
 		return

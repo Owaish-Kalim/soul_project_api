@@ -10,9 +10,9 @@ type Partner struct {
 }
 
 type SocketResponse struct {
-	Customer_Souls_Id string `json:"customer_souls_id"`
+	Customer_Souls_Id       string `json:"customer_souls_id"`
 	Merchant_Transaction_Id string `json: "merchant_trans_id"`
-	Customer_Name string `json: "customer_name"`
+	Customer_Name           string `json: "customer_name"`
 }
 
 type CustomerTran struct {
@@ -52,6 +52,9 @@ type query struct {
 	Transaction_Mode        string
 	Bank_Type               string
 	Pincode                 string
+	Slot_Date               string
+	Slot_Time               string
+	CreatedAt               string
 }
 
 type ErorMesg struct {
