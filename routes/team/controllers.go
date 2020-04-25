@@ -498,24 +498,26 @@ func TeamLogout(w http.ResponseWriter, r *http.Request) Shared.ErrorMessage {
 }
 
 func UploadImage(w http.ResponseWriter, req *http.Request) (ImgResp, Shared.ErrorMessage) {
-
+	fmt.Println(1212)
 	resp := ImgResp{}
-	req.ParseMultipartForm(2 * 1024 * 1024)
+	req.ParseMultipartForm(5 * 1024 * 1024)
 
-	fmt.Println(req.FormValue("email"))
+	// fmt.Println(req.FormValue("email"))
 	file, handler, err := req.FormFile("myfile")
 	if err != nil {
+		fmt.Println(122222)
 		panic(err)
 		return resp, Shared.ErrorMessage{Message: err.Error()}
 	}
+	fmt.Println(122222)
 	defer file.Close()
 	fmt.Println("File info")
 	fmt.Println("File Name: ", handler.Filename)
 	// fmt.Println("File Size: ",handler.Size())
 	fmt.Println("File Type: ", handler.Header.Get("Content-Type"))
 
-	fmt.Println(req.FormValue("email"))
-
+	// fmt.Println(req.FormValue("email"))
+	fmt.Println(1212)
 	if handler.Header.Get("Content-Type") != "image/jpeg" {
 		fmt.Println("Upload jpeg image")
 		return resp, Shared.ErrorMessage{Message: "Upload jpg image"}
@@ -527,7 +529,7 @@ func UploadImage(w http.ResponseWriter, req *http.Request) (ImgResp, Shared.Erro
 	if err2 != nil {
 		return resp, Shared.ErrorMessage{Message: err.Error()}
 	}
-	fmt.Println(3)
+	// fmt.Println(3)
 	defer tempFile.Close()
 
 	fileBytes, err3 := ioutil.ReadAll(file)
@@ -535,10 +537,11 @@ func UploadImage(w http.ResponseWriter, req *http.Request) (ImgResp, Shared.Erro
 		return resp, Shared.ErrorMessage{Message: err.Error()}
 	}
 	tempFile.Write(fileBytes)
-	fmt.Println(4)
+	// fmt.Println(4)
 	resp.Member_Image = handler.Filename
 	fmt.Println(resp.Member_Image)
-	userEmail := req.FormValue("email")
+	// userEmail := req.FormValue("email")
+	userEmail := context.Get(req, middleware.Decoded)
 	fmt.Println(userEmail)
 	sqlStatement := ` UPDATE slh_teams SET "Member_Image" = $1 WHERE ("Email") = $2`
 

@@ -93,7 +93,7 @@ func Assign(MTId string) CustomerPartner {
 		row = config.Db.QueryRow(sqlStatement, partners[i].Souls_Id)
 		err = row.Scan(&cust_part.Partner_Name, &cust_part.Partner_Email)
 		if err != nil {
-			fmt.Print("LOLA")
+			fmt.Print("LOL")
 			panic(err)
 		}
 
@@ -351,7 +351,7 @@ func ListCustomerTransaction(w http.ResponseWriter, r *http.Request) ([]Customer
 	AND ("Bank_Type") ILIKE ''|| $10 ||'%'
 	AND ("Slot_Date") ILIKE ''|| $11 ||'%' 
 	AND ("Slot_Time") ILIKE ''|| $12 ||'%' 
-	AND ("CreatedAt") ILIKE ''|| $13 ||'%'   `
+	AND ("CreatedAt") ILIKE ''|| $13 ||'%' `
 	cntRow := config.Db.QueryRow(sqlStatement, q.Customer_Souls_Id, q.Customer_Name, q.Total_Order_Amount, q.Massage_Duration, q.Pincode,
 		q.Merchant_Transaction_Id, q.Payment_Gateway_Id, q.Payment_Gateway_Mode, q.Transaction_Mode, q.Bank_Type, q.Slot_Date,
 		q.Slot_Time, q.CreatedAt)
